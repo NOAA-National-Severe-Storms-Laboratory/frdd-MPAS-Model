@@ -3049,7 +3049,6 @@ module atm_time_integration
              invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
-             
 !LJW+
              nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
