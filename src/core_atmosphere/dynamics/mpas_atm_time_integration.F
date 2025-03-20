@@ -97,7 +97,6 @@ module atm_time_integration
 
    ! some development items of use, these should be added to Registry if useful
 
-   logical, parameter :: scalar_filter = .true.
    logical, parameter :: mono_diffu4   = .true.
    logical, parameter :: weno          = .false.
 
@@ -3197,7 +3196,7 @@ module atm_time_integration
                                                   -scalar_old(iScalar,k,cell1)) 
                                                   
                      scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell) &
-                                                       + scalar_turb_flux * kdiff_avg         ! no density
+                                                       + scalar_turb_flux * kdiff_avg       
 
 ! This stores Del^2 (Scalar) for 4th order filter below   
                                                     
