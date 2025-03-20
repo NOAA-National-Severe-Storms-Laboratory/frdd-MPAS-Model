@@ -2903,7 +2903,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:), pointer :: invAreaCell, meshScalingDel2
 
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend_save
-      real (kind=RKIND), dimension(:,:), pointer :: uhAvg, rho_zz_old, rho_zz_new, wwAvg
+      real (kind=RKIND), dimension(:,:), pointer :: uhAvg, rho_zz_old, rho_zz_new, wwAvg, rho_edge
       real (kind=RKIND), dimension(:), pointer :: dvEdge
       integer, dimension(:,:), pointer :: cellsOnEdge
       real (kind=RKIND), dimension(:,:,:), intent(inout) :: horiz_flux_arr
@@ -2945,7 +2945,11 @@ module atm_time_integration
 ! Use L**3 (not L**4) for 4th-order scaling to account for grid variation, same scaling as Smagorinsky
 ! Make sure we dont violate stability: [K_4 * dt / area**2] < 1 / 36 (Klemp 2017)
 
-      h_scalar_eddy_visc4 = config_h_scalar_eddy_visc4  * config_len_disp**3
+      if( config_h_scalar_eddy_visc4 > 0.0 ) then
+         h_scalar_eddy_visc4 = config_h_scalar_eddy_visc4  * config_len_disp**3
+      else
+         h_scalar_eddy_visc4 = 0.0
+      endif 
 
 !LJW-
 
@@ -2990,6 +2994,7 @@ module atm_time_integration
       
       call mpas_pool_get_array(mesh, 'meshScalingDel2', meshScalingDel2)
       call mpas_pool_get_array(diag, 'kdiff', kdiff)
+      call mpas_pool_get_array(diag, 'rho_edge', rho_edge)
 
 !LJW+
 
@@ -3003,7 +3008,7 @@ module atm_time_integration
              invDcEdge, meshScalingDel4, meshScalingDel2, &
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
-             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, &
+             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
              local_advance_density, h_scalar_eddy_visc4)
 !LJW-
@@ -3050,7 +3055,7 @@ module atm_time_integration
              scalar_tend_save, fnm, fnp, rdnw, &
              bdyMaskCell, bdyMaskEdge, &
 !LJW+
-             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, &
+             nAdvCellsForEdge, advCellsForEdge, adv_coefs, adv_coefs_3rd, kdiff, rho_edge, &
              nEdges, horiz_flux_arr, rk_step, config_time_integration_order, &
              advance_density, h_scalar_eddy_visc4)
 !LJW-
@@ -3074,7 +3079,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:,:), intent(inout) :: scalar_new
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend_save
       real (kind=RKIND), dimension(:,:), intent(in) :: rho_zz_old
-      real (kind=RKIND), dimension(:,:), intent(in) :: uhAvg, wwAvg, rho_zz_new
+      real (kind=RKIND), dimension(:,:), intent(in) :: uhAvg, wwAvg, rho_zz_new, rho_edge
 !LJW+
       real (kind=RKIND), dimension(:), intent(in) :: dvEdge, invDcEdge, meshScalingDel4, meshScalingDel2
 !LJW-
@@ -3143,13 +3148,14 @@ module atm_time_integration
       !  horizontal mixing for scalars - coded for hyperdiffusion and eddy diffusion
       !
 
-      if (rk_step == 1 .and. scalar_filter) then
+       if ( rk_step == 1 ) then
 
-      
-       call mpas_log_write('')
-       call mpas_log_write('atm_advance_scalar_work:  Running 4th_order_filter...')
-       call mpas_log_write(' h_scalar_eddy_visc4: $r', realArgs=(/h_scalar_eddy_visc4/))
-       call mpas_log_write('')
+         call mpas_log_write('')
+         call mpas_log_write('atm_advance_scalar_work:  Running 4th_order_filter...')
+         call mpas_log_write(' h_scalar_eddy_visc4: $r', realArgs=(/h_scalar_eddy_visc4/))
+         call mpas_log_write(' prandtl_inv: $r', realArgs=(/prandtl_inv/))
+         call mpas_log_write(' Max KM $r', realArgs=(/maxval(kdiff)/))
+         call mpas_log_write('')
 
 ! at rk_step == 1, scalar_new == scalar_old.  So use this as temp storage...
 
@@ -3170,14 +3176,17 @@ module atm_time_integration
             do i=1,nEdgesOnCell(iCell)
 
                iEdge     = edgesOnCell(i,iCell)
+               
                edge_sign = r_areaCell*edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * invDcEdge(iEdge)
+               
                pr_scale  = prandtl_inv * meshScalingDel2(iEdge)
+               
                cell1     = cellsOnEdge(1,iEdge)
                cell2     = cellsOnEdge(2,iEdge)
 !DIR$ IVDEP
                do k=1,nVertLevels
                
-                  kdiff_avg = 0.5 * (kdiff(k,cell1) + kdiff(k,cell2)) * pr_scale
+                  kdiff_avg = 0.5 * (kdiff(k,cell1) + kdiff(k,cell2)) * pr_scale * rho_edge(k,iEdge)
 
                   do iScalar=1,num_scalars
 
@@ -3185,7 +3194,7 @@ module atm_time_integration
 ! Code to add eddy mixing to the scalar variables
 
                      scalar_turb_flux = edge_sign*(scalar_old(iScalar,k,cell2)  &
-                                                  -scalar_old(iScalar,k,cell1))
+                                                  -scalar_old(iScalar,k,cell1)) 
                                                   
                      scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell) &
                                                        + scalar_turb_flux * kdiff_avg         ! no density
@@ -3205,13 +3214,17 @@ module atm_time_integration
 
 !$OMP BARRIER
 
-         do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
 
-            r_areaCell = h_scalar_eddy_visc4 * invAreaCell(iCell)   ! no prandtl scaling here
+         if (h_scalar_eddy_visc4 > 0.0) then  ! 4th order mixing is active
+
+
+           do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+
+             r_areaCell = h_scalar_eddy_visc4 * invAreaCell(iCell) 
 
 ! create 4th order diffusive flux...
 
-            do i=1,nEdgesOnCell(iCell)
+             do i=1,nEdgesOnCell(iCell)
 
                iEdge = edgesOnCell(i,iCell)
                edge_sign = meshScalingDel4(iEdge)*r_areaCell*dvEdge(iEdge)*edgesOnCell_sign(i,iCell)*invDcEdge(iEdge)
@@ -3219,11 +3232,12 @@ module atm_time_integration
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
 
-             if( mono_diffu4 ) then
+               if( mono_diffu4 ) then
  
-               do k=1,nVertLevels
+                 do k=1,nVertLevels
+                 
  
-                  do iScalar=1,num_scalars
+                   do iScalar=1,num_scalars
  
                       mono_diffusion_weight = max(0.0, sign(1.0, -1.0*(scalar_new(iScalar,k,cell2)  &
                                                                       -scalar_new(iScalar,k,cell1)) &
@@ -3231,29 +3245,34 @@ module atm_time_integration
                                                                       -scalar_old(iScalar,k,cell1))) )
                   
                       scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell) & 
-                                                        - mono_diffusion_weight*edge_sign*(scalar_new(iScalar,k,cell2) &
-                                                        - scalar_new(iScalar,k,cell1))
+                                                        - mono_diffusion_weight * edge_sign * rho_edge(k,iEdge) &
+                                                        * (scalar_new(iScalar,k,cell2) - scalar_new(iScalar,k,cell1))
  
-                    end do  ! iScalar loop
-                  end do  ! nVertsLevels
+                   end do  ! iScalar loop
+                 end do  ! nVertsLevels
  
                else
  
                  do k=1,nVertLevels
+                 
+                    r_areaCell = h_scalar_eddy_visc4 * invAreaCell(iCell) * rho_edge(k,iEdge)  
+
                     do iScalar=1,num_scalars
 
                       scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell)      & 
-                                                        - edge_sign*(scalar_new(iScalar,k,cell2) &
-                                                                    -scalar_new(iScalar,k,cell1))
+                                                        - edge_sign * rho_edge(k,iEdge) &
+                                                        * (scalar_new(iScalar,k,cell2) - scalar_new(iScalar,k,cell1))
 
                     end do  ! iScalar loop
                   end do  ! nVertsLevels
 
                endif ! mono_diffu4 diffusion
 
-            end do   ! nEdgesOnCell
+             end do   ! nEdgesOnCell
 
-         end do   ! iCell
+           end do   ! iCell
+         
+         endif ! 4th order filter section
 
 ! reset scalar_new == scalar_old
 
@@ -3265,33 +3284,34 @@ module atm_time_integration
             end do
          end do
 
-      end if ! scalar mixing calculated first rk_step
+       end if ! scalar mixing calculated first rk_step
 
 !LJW-
 
-      do iEdge=edgeStart,edgeEnd
+       do iEdge=edgeStart,edgeEnd
 
-         if ((.not.config_apply_lbcs) &
-             .or. (bdyMaskEdge(iEdge) < nRelaxZone-1)) then  ! full flux calculation
+         if ((.not.config_apply_lbcs) .or. (bdyMaskEdge(iEdge) < nRelaxZone-1)) then  ! full flux calculation
 
-         select case(nAdvCellsForEdge(iEdge))
+           select case(nAdvCellsForEdge(iEdge))
 
-         case(10)
+             case(10)
 
-            do j=1,10
+               do j=1,10
 !DIR$ IVDEP
-               do k=1,nVertLevels
-                  scalar_weight2(k,j) = adv_coefs(j,iEdge) + sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(j,iEdge)
+                 do k=1,nVertLevels
+                   scalar_weight2(k,j) = adv_coefs(j,iEdge) + sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(j,iEdge)
+                 end do
+                
                end do
-            end do
-            do j=1,10
-               ica(j) = advCellsForEdge(j,iEdge)
-            end do
+              
+               do j=1,10
+                 ica(j) = advCellsForEdge(j,iEdge)
+               end do
 !DIR$ IVDEP
-            do k = 1,nVertLevels
+               do k = 1,nVertLevels
 !DIR$ IVDEP
-               do iScalar = 1,num_scalars
-                  horiz_flux_arr(iScalar,k,iEdge) = &
+                 do iScalar = 1,num_scalars
+                   horiz_flux_arr(iScalar,k,iEdge) = &
                        scalar_weight2(k,1)  * scalar_new(iScalar,k,ica(1)) + &
                        scalar_weight2(k,2)  * scalar_new(iScalar,k,ica(2)) + &
                        scalar_weight2(k,3)  * scalar_new(iScalar,k,ica(3)) + &
@@ -3302,52 +3322,56 @@ module atm_time_integration
                        scalar_weight2(k,8)  * scalar_new(iScalar,k,ica(8)) + &
                        scalar_weight2(k,9)  * scalar_new(iScalar,k,ica(9)) + &
                        scalar_weight2(k,10) * scalar_new(iScalar,k,ica(10))
+                 end do
                end do
-            end do
 
-         case default
+             case default
 
 !DIR$ IVDEP
                do k=1,nVertLevels
-!DIR$ IVDEP
-                  do iScalar=1,num_scalars
-                     horiz_flux_arr(iScalar,k,iEdge) = 0.0_RKIND
+    !DIR$ IVDEP
+                 do iScalar=1,num_scalars
+                   horiz_flux_arr(iScalar,k,iEdge) = 0.0_RKIND
+                 end do
+             
                end do
-            end do
 
                do j=1,nAdvCellsForEdge(iEdge)
-                  iAdvCell = advCellsForEdge(j,iEdge)
+                 iAdvCell = advCellsForEdge(j,iEdge)
 
-                  do k=1,nVertLevels
-                     do iScalar=1,num_scalars
-                        scalar_weight = adv_coefs(j,iEdge) + sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(j,iEdge)
-                        horiz_flux_arr(iScalar,k,iEdge) = horiz_flux_arr(iScalar,k,iEdge) &
-                                                        + scalar_weight * scalar_new(iScalar,k,iAdvCell)
-                     end do
-                  end do
+                 do k=1,nVertLevels
+                   do iScalar=1,num_scalars
+                     scalar_weight = adv_coefs(j,iEdge) + sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(j,iEdge)
+                     horiz_flux_arr(iScalar,k,iEdge) = horiz_flux_arr(iScalar,k,iEdge) &
+                                                     + scalar_weight * scalar_new(iScalar,k,iAdvCell)
+                   end do
+                 end do
                end do
-         end select
+             end select
 
          else if(config_apply_lbcs &
                  .and. (bdyMaskEdge(iEdge) >= nRelaxZone-1) &
                  .and. (bdyMaskEdge(iEdge) <= nRelaxZone)) then
 
           !  upwind flux evaluation for outermost 2 edges in specified zone
-            cell1 = cellsOnEdge(1,iEdge)
-            cell2 = cellsOnEdge(2,iEdge)
+           cell1 = cellsOnEdge(1,iEdge)
+           cell2 = cellsOnEdge(2,iEdge)
 !DIR$ IVDEP
-            do k=1,nVertLevels
+           do k=1,nVertLevels
 !DIR$ IVDEP
-               do iScalar=1,num_scalars
+             do iScalar=1,num_scalars
                u_direction = sign(0.5_RKIND,uhAvg(k,iEdge))
-               u_positive = dvEdge(iEdge)*abs(u_direction + 0.5_RKIND)
-               u_negative = dvEdge(iEdge)*abs(u_direction - 0.5_RKIND)
-                  horiz_flux_arr(iScalar,k,iEdge) = u_positive*scalar_new(iScalar,k,cell1) + u_negative*scalar_new(iScalar,k,cell2)
-               end do
-            end do
+               u_positive  = dvEdge(iEdge)*abs(u_direction + 0.5_RKIND)
+               u_negative  = dvEdge(iEdge)*abs(u_direction - 0.5_RKIND)
+               horiz_flux_arr(iScalar,k,iEdge) = u_positive*scalar_new(iScalar,k,cell1) &
+                                               + u_negative*scalar_new(iScalar,k,cell2)
+             end do
+              
+           end do
 
-          end if ! end of regional MPAS test
-      end do
+         end if ! end of regional MPAS test
+          
+       end do  !  iEdge=edgeStart,edgeEnd
 
 !$OMP BARRIER
 
@@ -3355,7 +3379,6 @@ module atm_time_integration
       ! scalar update, for each column sum fluxes over horizontal edges, add physics tendency,
       ! and add vertical flux divergence in update.
       !
-
 
       do iCell=cellSolveStart,cellSolveEnd
 
@@ -5392,12 +5415,19 @@ module atm_time_integration
          delsq_theta(1:nVertLevels,cellStart:cellEnd) = 0.0
 
          do iCell=cellStart,cellEnd
+         
             tend_theta_euler(1:nVertLevels,iCell) = 0.0
+            
             r_areaCell = invAreaCell(iCell)
+            
             do i=1,nEdgesOnCell(iCell)
+            
                iEdge = edgesOnCell(i,iCell)
+               
                edge_sign = r_areaCell*edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * invDcEdge(iEdge)
+               
                pr_scale = prandtl_inv * meshScalingDel2(iEdge)
+               
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
 !DIR$ IVDEP
@@ -5406,8 +5436,11 @@ module atm_time_integration
 !  we are computing the Smagorinsky filter at more points than needed here so as to pick up the delsq_theta for 4th order filter below
 
                   theta_turb_flux = edge_sign*(theta_m(k,cell2) - theta_m(k,cell1))*rho_edge(k,iEdge)
+                  
                   delsq_theta(k,iCell) = delsq_theta(k,iCell) + theta_turb_flux
+                  
                   theta_turb_flux = theta_turb_flux*0.5*(kdiff(k,cell1)+kdiff(k,cell2)) * pr_scale
+                  
                   tend_theta_euler(k,iCell) = tend_theta_euler(k,iCell) + theta_turb_flux
 
                end do
@@ -5419,7 +5452,7 @@ module atm_time_integration
          if (h_theta_eddy_visc4 > 0.0) then  ! 4th order mixing is active
 
             call mpas_log_write('')
-            call mpas_log_write('Dynamics:  h_theta_eddy_visc4: $r', realArgs=(/h_theta_eddy_visc4/))
+            call mpas_log_write('Dynamics: h_theta_eddy_visc4: $r', realArgs=(/h_theta_eddy_visc4/))
             call mpas_log_write('')
 
             do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
