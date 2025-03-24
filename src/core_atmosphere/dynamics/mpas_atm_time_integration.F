@@ -98,7 +98,7 @@ module atm_time_integration
    ! some development items of use, these should be added to Registry if useful
 
    logical, parameter :: mono_diffu4   = .true.
-   logical, parameter :: weno          = .false.
+   logical, parameter :: weno          = .true.
 
    contains
 
@@ -3149,6 +3149,7 @@ module atm_time_integration
 
        if ( rk_step == 1 ) then
 
+      
          call mpas_log_write('')
          call mpas_log_write('atm_advance_scalar_work:  Running 4th_order_filter...')
          call mpas_log_write(' h_scalar_eddy_visc4: $r', realArgs=(/h_scalar_eddy_visc4/))
@@ -3196,7 +3197,7 @@ module atm_time_integration
                                                   -scalar_old(iScalar,k,cell1)) 
                                                   
                      scalar_tend_save(iScalar,k,iCell) = scalar_tend_save(iScalar,k,iCell) &
-                                                       + scalar_turb_flux * kdiff_avg       
+                                                       + scalar_turb_flux * kdiff_avg         ! no density
 
 ! This stores Del^2 (Scalar) for 4th order filter below   
                                                     
@@ -3460,7 +3461,7 @@ module atm_time_integration
               do k=4,nVertLevels-2
                 do iScalar=1,num_scalars
 
-                    wdtn(iScalar,k) = flux56( scalar_new(iScalar,k-2,iCell),  &
+                    wdtn(iScalar,k) = flux56( scalar_new(iScalar,k-3,iCell),  &
                                               scalar_new(iScalar,k-2,iCell),  &
                                               scalar_new(iScalar,k-1,iCell),  &
                                               scalar_new(iScalar,k  ,iCell),  &
@@ -3477,9 +3478,9 @@ module atm_time_integration
          do k=3,nVertLevels-1
 !DIR$ IVDEP
             do iScalar=1,num_scalars
-                  wdtn(iScalar,k) = flux34( scalar_new(iScalar,k-2,iCell),scalar_new(iScalar,k-1,iCell),  &
-                                        scalar_new(iScalar,k  ,iCell),scalar_new(iScalar,k+1,iCell),  &
-                                        wwAvg(k,iCell), coef_3rd_order )
+               wdtn(iScalar,k) = flux34( scalar_new(iScalar,k-2,iCell),scalar_new(iScalar,k-1,iCell),  &
+                                         scalar_new(iScalar,k  ,iCell),scalar_new(iScalar,k+1,iCell),  &
+                                         wwAvg(k,iCell), coef_3rd_order )
             end do
          end do
             
@@ -3489,8 +3490,8 @@ module atm_time_integration
 !DIR$ IVDEP
          do k=1,nVertLevels
             do iScalar=1,num_scalars
-                  rho_zz_new_inv = 1.0_RKIND / (weight_time_old*rho_zz_old(k,iCell) + weight_time_new*rho_zz_new(k,iCell))
-               scalar_new(iScalar,k,iCell) = (   scalar_old(iScalar,k,iCell)*rho_zz_old(k,iCell) &
+               rho_zz_new_inv = 1.0_RKIND / (weight_time_old*rho_zz_old(k,iCell) + weight_time_new*rho_zz_new(k,iCell))
+               scalar_new(iScalar,k,iCell) = (scalar_old(iScalar,k,iCell)*rho_zz_old(k,iCell) &
                      + dt*( scalar_tend_column(iScalar,k) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) ) * rho_zz_new_inv
             end do
          end do
@@ -3768,11 +3769,12 @@ module atm_time_integration
 
 ! LJW+ - weno variables
 
-      real (kind=RKIND)            :: qim2, qim1, qi, qip1, qip2
-      real (kind=RKIND)            :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-      real (kind=RKIND), parameter :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-28
-      integer, parameter           :: pw = 2
-      real (kind=RKIND), parameter :: Weps=1.e-20
+      real (kind=RKIND)             :: qim2, qim1, qi, qip1, qip2
+      real (kind=R8KIND)            :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
+      real (kind=R8KIND), parameter :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-28
+      integer, parameter            :: pw = 2
+      real (kind=R8KIND), parameter :: Weps=1.d-20
+      
 ! LJW- end weno variables
 
 #ifdef DEBUG_TRANSPORT
@@ -3782,7 +3784,7 @@ module atm_time_integration
 
       logical :: local_advance_density
 
-      real (kind=RKIND), parameter :: eps=1.e-20
+      real (kind=R8KIND), parameter :: eps=1.d-20
 
       if (present(advance_density)) then
          local_advance_density = advance_density
@@ -3867,11 +3869,10 @@ module atm_time_integration
             end do
          end do
 
-            do k=1,nVertLevels
+         do k=1,nVertLevels
             scalar_old(k,nCells+1) = 0.0_RKIND
             scalar_new(k,nCells+1) = 0.0_RKIND
-            end do
-
+         end do
 
 !$OMP BARRIER
 
@@ -3896,16 +3897,14 @@ module atm_time_integration
          end do
          call mpas_log_write(' scmin, scmin new in ', realArgs=(/scmin,scmax/))
 #endif
-
-
          !
          !  vertical flux divergence, and min and max bounds for flux limiter
          !
          do iCell=cellSolveStart,cellSolveEnd
 
             ! zero flux at top and bottom
-           wdtn(1,iCell) = 0.0_RKIND
-           wdtn(nVertLevels+1,iCell) = 0.0_RKIND
+            wdtn(1,iCell) = 0.0_RKIND
+            wdtn(nVertLevels+1,iCell) = 0.0_RKIND
 
             k = 1
             s_max(k,iCell) = max(scalar_old(1,iCell),scalar_old(2,iCell))
@@ -3957,9 +3956,15 @@ module atm_time_integration
                  beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
                  beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
 
-                 wi0 = gi0 / (Weps + beta0)**pw
-                 wi1 = gi1 / (Weps + beta1)**pw
-                 wi2 = gi2 / (Weps + beta2)**pw
+!          Original WENO (eg, Jiang and Shu, 1996, JCP)
+!               wi0 = gi0 / (Weps + beta0)**pw
+!               wi1 = gi1 / (Weps + beta1)**pw
+!               wi2 = gi2 / (Weps + beta2)**pw
+
+!          Improved smoothness indicators (Borges et al, 2008, JCP)
+                 wi0 = 0.1*(1.0+min(1.0d30,abs(beta0-beta2)/(beta0+Weps))**2)
+                 wi1 = 0.6*(1.0+min(1.0d30,abs(beta0-beta2)/(beta1+Weps))**2)
+                 wi2 = 0.3*(1.0+min(1.0d30,abs(beta0-beta2)/(beta2+Weps))**2)
 
                  sumwk = wi0 + wi1 + wi2
 
@@ -3984,13 +3989,13 @@ module atm_time_integration
             ELSE
 
 !DIR$ IVDEP
-            do k=3,nVertLevels-1
+              do k=3,nVertLevels-1
                  wdtn(k,iCell) = flux34( scalar_new(k-2,iCell),scalar_new(k-1,iCell),  &
-                                      scalar_new(k  ,iCell),scalar_new(k+1,iCell),  &
-                                      wwAvg(k,iCell), coef_3rd_order )
-               s_max(k,iCell) = max(scalar_old(k-1,iCell),scalar_old(k,iCell),scalar_old(k+1,iCell))
-               s_min(k,iCell) = min(scalar_old(k-1,iCell),scalar_old(k,iCell),scalar_old(k+1,iCell))
-            end do
+                                         scalar_new(k  ,iCell),scalar_new(k+1,iCell),  &
+                                         wwAvg(k,iCell), coef_3rd_order )
+                 s_max(k,iCell) = max(scalar_old(k-1,iCell),scalar_old(k,iCell),scalar_old(k+1,iCell))
+                 s_min(k,iCell) = min(scalar_old(k-1,iCell),scalar_old(k,iCell),scalar_old(k+1,iCell))
+              end do
 
             ENDIF 
             
