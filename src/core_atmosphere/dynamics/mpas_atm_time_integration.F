@@ -98,7 +98,7 @@ module atm_time_integration
    ! some development items of use, these should be added to Registry if useful
 
    logical, parameter :: mono_diffu4   = .true.
-   logical, parameter :: weno          = .true.
+   logical, parameter :: weno          = .false.
 
    contains
 
