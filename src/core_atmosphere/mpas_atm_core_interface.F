@@ -23,8 +23,8 @@ module atm_core_interface
    !> \brief   Atmosphere core setup routine
    !> \author  Doug Jacobsen, Michael Duda
    !> \date    18 March 2015
-   !> \details 
-   !>  This routine is intended to setup the necessary variables within 
+   !> \details
+   !>  This routine is intended to setup the necessary variables within
    !>  a core_type for the atm core.
    !
    !-----------------------------------------------------------------------
@@ -67,8 +67,8 @@ module atm_core_interface
    !> \brief   Atmosphere domain setup routine
    !> \author  Doug Jacobsen, Michael Duda
    !> \date    18 March 2015
-   !> \details 
-   !>  This routine is intended to setup the necessary variables within 
+   !> \details
+   !>  This routine is intended to setup the necessary variables within
    !>  a domain_type for the init atm core.
    !
    !-----------------------------------------------------------------------
@@ -92,7 +92,7 @@ module atm_core_interface
    !> \brief   Package setup routine
    !> \author  Michael Duda
    !> \date    6 August 2014
-   !> \details 
+   !> \details
    !>  This routine is responsible for setting up packages for the
    !>  atmosphere core. It may use ay logic based on configuration options
    !>  to set packages variables to either .true. or .false. Model fields are
@@ -265,12 +265,12 @@ module atm_core_interface
    !> \brief   Simulation clock setup routine
    !> \author  Michael Duda
    !> \date    6 August 2014
-   !> \details 
+   !> \details
    !>  The purpose of this routine is to allow the core to set up a simulation
    !>  clock that will be used by the I/O subsystem for timing reads and writes
    !>  of I/O streams.
-   !>  This routine is called from the superstructure after the framework 
-   !>  has been initialized but before any fields have been allocated and 
+   !>  This routine is called from the superstructure after the framework
+   !>  has been initialized but before any fields have been allocated and
    !>  initial fields have been read from input files. However, all namelist
    !>  options are available.
    !
@@ -351,10 +351,10 @@ module atm_core_interface
    !> \brief   Returns the name of the stream containing mesh information
    !> \author  Michael Duda
    !> \date    8 August 2014
-   !> \details 
+   !> \details
    !>  This routine returns the name of the I/O stream containing dimensions,
-   !>  attributes, and mesh fields needed by the framework bootstrapping 
-   !>  routine. At the time this routine is called, only namelist options 
+   !>  attributes, and mesh fields needed by the framework bootstrapping
+   !>  routine. At the time this routine is called, only namelist options
    !>  are available.
    !
    !-----------------------------------------------------------------------
@@ -409,7 +409,7 @@ module atm_core_interface
    !> \brief   Decomposition setup function
    !> \author  Doug Jacobsen, Michael Duda
    !> \date    11 March 2015
-   !> \details 
+   !> \details
    !>  This function is intended to create the decomposition list within a
    !>  domain type, and register any decompositons the core wants within it.
    !
@@ -449,7 +449,7 @@ module atm_core_interface
    !> \brief   Block setup function
    !> \author  Doug Jacobsen, Michael Duda
    !> \date    03/18/2015
-   !> \details 
+   !> \details
    !>  This function is a wrapper function to properly setup a block to be
    !>  an atmosphere core block.
    !
@@ -501,7 +501,7 @@ module atm_core_interface
    !> \brief   Allocate scalars and scalars_tend var_arrays
    !> \author  Michael G. Duda
    !> \date    20 May 2020
-   !> \details 
+   !> \details
    !>  When MPAS-A is operating as a dycore for CAM, the scalars and
    !>  scalars_tend var_arrays are allocated separately from other Registry-
    !>  defined variables, since the set of scalars to be handled by the dycore

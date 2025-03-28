@@ -143,7 +143,7 @@
        if(.not.allocated(ni_p)) allocate(ni_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
-       
+
     case default
  end select pbl_select
 
@@ -232,7 +232,7 @@
        if(allocated(ni_p)) deallocate(ni_p)
        if(allocated(nifa_p)) deallocate(nifa_p)
        if(allocated(nwfa_p)) deallocate(nwfa_p)
-       
+
     case default
  end select pbl_select
 
@@ -501,7 +501,7 @@
              enddo
           enddo
        endif
-       
+
     case default
  end select pbl_select
 
@@ -668,7 +668,7 @@
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- 
+
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid,w
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
@@ -883,16 +883,16 @@
              endif
 
           case("mp_nssl2m")
-             call mpas_pool_get_dimension(state,'index_ni',index_ni)
-             call mpas_pool_get_dimension(state,'index_nr',index_nr)
-             call mpas_pool_get_dimension(state,'index_nc'  ,index_nc  )
-             call mpas_pool_get_dimension(state,'index_qh'  ,index_qh  )
-             call mpas_pool_get_dimension(state,'index_ns'  ,index_ns  )
-             call mpas_pool_get_dimension(state,'index_ng'  ,index_ng  )
-             call mpas_pool_get_dimension(state,'index_nh'  ,index_nh  )
-             call mpas_pool_get_dimension(state,'index_nccn' ,index_nccn  )
-             call mpas_pool_get_dimension(state,'index_volg' ,index_volg  )
-             call mpas_pool_get_dimension(state,'index_volh' ,index_volh  )
+             call mpas_pool_get_dimension(state,'index_ni'  , index_ni  )
+             call mpas_pool_get_dimension(state,'index_nr'  , index_nr  )
+             call mpas_pool_get_dimension(state,'index_nc'  , index_nc  )
+             call mpas_pool_get_dimension(state,'index_qh'  , index_qh  )
+             call mpas_pool_get_dimension(state,'index_ns'  , index_ns  )
+             call mpas_pool_get_dimension(state,'index_ng'  , index_ng  )
+             call mpas_pool_get_dimension(state,'index_nh'  , index_nh  )
+             call mpas_pool_get_dimension(state,'index_nccn', index_nccn)
+             call mpas_pool_get_dimension(state,'index_volg', index_volg)
+             call mpas_pool_get_dimension(state,'index_volh', index_volh)
 
              ni   => scalars(index_ni,:,:)
              nr   => scalars(index_nr,:,:)
@@ -904,7 +904,7 @@
              nccn => scalars(index_nccn,:,:)
              volg => scalars(index_volg,:,:)
              volh => scalars(index_volh,:,:)
-             
+
              do j = jts, jte
              do k = kts, kte
              do i = its, ite
@@ -926,7 +926,7 @@
                 call mpas_pool_get_dimension(state,'index_zrw' ,index_zrw  )
                 call mpas_pool_get_dimension(state,'index_zgw' ,index_zgw  )
                 call mpas_pool_get_dimension(state,'index_zhw' ,index_zhw  )
-                
+
                 zrw   => scalars(index_zrw,:,:)
                 zgw   => scalars(index_zgw,:,:)
                 zhw   => scalars(index_zhw,:,:)
@@ -1122,7 +1122,7 @@
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_ns,index_ng,index_nh,index_nccn
  integer,pointer:: index_volg,index_volh
- 
+
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,tend_sfc_pressure
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
@@ -1379,7 +1379,7 @@
              call mpas_pool_get_dimension(state,'index_nccn'  ,index_nccn  )
              call mpas_pool_get_dimension(state,'index_volg'  ,index_volg  )
              call mpas_pool_get_dimension(state,'index_volh'  ,index_volh  )
-             
+
              ni   => scalars(index_ni,:,:)
              nc   => scalars(index_nc,:,:)
              nr   => scalars(index_nr,:,:)
@@ -1407,12 +1407,12 @@
              enddo
              enddo
              enddo
-          
+
              if (nssl_moments == 'nssl3m')  then
                 call mpas_pool_get_dimension(state,'index_zrw'  ,index_zrw  )
                 call mpas_pool_get_dimension(state,'index_zgw'  ,index_zgw  )
                 call mpas_pool_get_dimension(state,'index_zhw'  ,index_zhw  )
-                
+
                 zrw   => scalars(index_zrw,:,:)
                 zgw   => scalars(index_zgw,:,:)
                 zhw   => scalars(index_zhw,:,:)
@@ -1541,7 +1541,7 @@
                       rnwfampten(k,i) = (nwfa(k,i)-rnwfampten(k,i))/dt_dyn
                    enddo
                    enddo
-                
+
                 case("mp_tempo")
                    if(config_tempo_aerosolaware) then
                       call mpas_pool_get_array(tend_physics,'rncmpten',rncmpten)
