@@ -1,9 +1,11 @@
 [submodule "src/core_atmosphere/physics/TEMPO"]
-	path = src/core_atmosphere/physics/TEMPO
-	url = https://github.com/NCAR/TEMPO.git
+        path = src/core_atmosphere/physics/TEMPO
+        url = https://github.com/ywangwof/TEMPO.git
+        branch = NSSL/V822
 [submodule "src/core_atmosphere/physics/UGWP"]
 	path = src/core_atmosphere/physics/UGWP
 	url = https://github.com/mdtoyNOAA/UGWP.git
 [submodule "src/core_atmosphere/physics/MYNN-EDMF"]
-	path = src/core_atmosphere/physics/MYNN-EDMF
-	url = https://github.com/NCAR/MYNN-EDMF.git
+        path = src/core_atmosphere/physics/MYNN-EDMF
+        url = https://github.com/ywangwof/MYNN-EDMF.git
+        branch = NSSL/V822
