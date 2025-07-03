@@ -1019,6 +1019,7 @@
        call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
        call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
        call mpas_pool_get_array(diag_physics,'re_snow' ,re_snow )
+       call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
 
        do j = jts,jte
        do k = kts,kte
