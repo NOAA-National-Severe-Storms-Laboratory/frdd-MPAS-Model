@@ -297,7 +297,8 @@
     evapprod_p,       &!
     recloud_p,        &!
     reice_p,          &!
-    resnow_p           !
+    resnow_p,         &!
+    refl10cm_p         !
 
 !... for Thompson cloud microphysics parameterization, including aerosol-aware option:
  real(kind=RKIND),dimension(:,:),allocatable:: &

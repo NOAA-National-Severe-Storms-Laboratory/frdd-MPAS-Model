@@ -2627,10 +2627,6 @@
                 <!-- ... PARAMETERIZATION OF CLOUD MICROPHYSICS:                                                        -->
                 <!-- ================================================================================================== -->
 
-                <var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
-                     description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_thompson_aers_in;mp_nssl2m_in"/>
-
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
                      packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in"/>
@@ -2645,7 +2641,7 @@
 
                 <var name="refl10cm" type="real" dimensions="nVertLevels nCells Time" units="dBZ"
                      description="10 cm radar reflectivity"
-                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in"/>
+                     packages="mp_thompson_in;mp_thompson_aers_in;mp_wsm6_in;mp_nssl2m_in"/>
 
                 <var name="i_rainnc" type="integer" dimensions="nCells Time" units="unitless"
                      description="incidence of accumulated grid-scale precipitation greater than config_bucket_rainnc"
