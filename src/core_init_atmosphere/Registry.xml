@@ -112,6 +112,57 @@
                      description="projecting layer values to the interface, linear vertical interpolation or integral"
                      possible_values="'linear_interpolation' or 'layer_integral' (layer average value)"/>
 
+                <nml_option name="config_sounding_type" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="Sounding option: 1=internal, 2=read in external (for cases 4 and 5 only)"
+                     possible_values="1 or 2"/>
+
+                <nml_option name="config_input_sounding_name"  type="character"     default_value="input_sounding"
+                     units="-"
+                     description="filename for input sounding (cases 4 and 5 only)"
+                     possible_values="string"/>
+
+                <nml_option name="config_multi_pert" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="Number of bubbles is 2*n+1 (for cases 4 and 5 only)"
+                     possible_values="Integer value of 0 or more"/>
+
+                <nml_option name="config_read_z_grid" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="0 for internal z levels, 1 to read in input_grid_z (for cases 4 and 5 only)"
+                     possible_values="Integer value of 0 or 1"/>
+
+                <nml_option name="config_use_sounding_z_levels" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="true to read z levels from sounding file (for cases 4 and 5 only)"
+                     possible_values="true or false"/>
+
+                <nml_option name="config_xbubloc" type="real" default_value="0.5"
+                     units="-"
+                     description="factor in location of single thermal bubble as in xcent = xbubloc*(xmax-xmin)"
+                     possible_values="0 $\leq$ config_xbubloc $\leq$ 1"/>
+
+                <nml_option name="config_ybubloc" type="real" default_value="0.5"
+                     units="-"
+                     description="factor in location of single thermal bubble as in ycent = ybubloc*(ymax-ymin)"
+                     possible_values="0 $\leq$ config_ybubloc $\leq$ 1"/>
+
+                <nml_option name="config_delt" type="real" default_value="3.0"
+                     units="-"
+                     description="delta-t for thermal bubble"
+                     possible_values="real number"/>
+
+                <nml_option name="config_umv" type="real" default_value="0.0"
+                     units="-"
+                     description="grid motion in U direction"
+                     possible_values="real number"/>
+
+                <nml_option name="config_vmv" type="real" default_value="0.0"
+                     units="-"
+                     description="grid motion in V direction"
+                     possible_values="real number"/>
+
+
         </nml_record>
 
         <nml_record name="dimensions" in_defaults="true">
