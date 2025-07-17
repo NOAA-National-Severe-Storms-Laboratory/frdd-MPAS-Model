@@ -207,13 +207,20 @@
     qh_p               !hail mixing ratio                                                   [kg/kg]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    nc_p,             &!
-    ni_p,             &!
-    nr_p,             &!
-    ns_p, ng_p, nh_p, nccn_p, &
-    volg_p, volh_p,   &!
-    nwfa_p,           &!
-    nifa_p,             zrw_p, zgw_p, zhw_p
+    nc_p,             &!cloud droplet number concentration                                   [#/kg]
+    ni_p,             &!cloud ice number concentration                                       [#/kg]
+    nr_p,             &!rain number concentration                                            [#/kg]
+    ns_p,             &!snow number concentration                                            [#/kg]
+    ng_p,             &!graupel number concentration                                         [#/kg]
+    nh_p,             &!hail number concentration                                            [#/kg]
+    nccn_p,           &!cloud condensation nuclei number concentration                       [#/kg]
+    volg_p,           &!graupel volume                                                      [m3/kg]
+    volh_p,           &!hail volume                                                         [m3/kg]
+    zrw_p,            &!rain reflectivity                                                   [m6/kg]
+    zgw_p,            &!graupel reflectivity                                                [m6/kg]
+    zhw_p,            &!hail reflectivity                                                   [m6/kg]
+    nwfa_p,           &!water-friendly aerosols
+    nifa_p             !ice-friendly aerosols
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     muc_p,            &!
@@ -262,8 +269,8 @@
     f_qi,             &!parameter set to true to include the cloud ice mixing ratio.
     f_qs,             &!parameter set to true to include the snow minxg ratio.
     f_qg,             &!parameter set to true to include the graupel mixing ratio.
-    f_qoz,            &!parameter set to true to include the ozone mixing ratio.
-    f_qh
+    f_qh,             &!parameter set to true to include the hail mixing ratio.
+    f_qoz              !parameter set to true to include the ozone mixing ratio.
 
  logical:: &
     f_nc,             &!parameter set to true to include the cloud water number concentration.
@@ -283,6 +290,8 @@
     snowncv_p,        &!
     graupelnc_p,      &!
     graupelncv_p,     &!
+    hailnc_p,         &
+    hailncv_p,        &
     sr_p,             &!
     nwfa2d_p
 
