@@ -456,7 +456,7 @@
              enddo
              enddo
 
-          case("mp_nssl2m","mp_tempo")
+          case("mp_tempo")
              if(config_microp_re) then
                 call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
                 call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
@@ -753,7 +753,7 @@
                 enddo
              endif
 
-          case("mp_nssl2m","mp_tempo")
+          case("mp_tempo")
              call mpas_pool_get_array(diag_physics,'rre_cloud',rre_cloud)
              call mpas_pool_get_array(diag_physics,'rre_ice'  ,rre_ice  )
              call mpas_pool_get_array(diag_physics,'rre_snow' ,rre_snow )
