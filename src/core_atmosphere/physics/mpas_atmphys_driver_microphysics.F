@@ -199,6 +199,7 @@
           if(.not.allocated(volh_p)) allocate(volh_p(ims:ime,kms:kme,jms:jme))
 
           if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
 
             if(.not.allocated(zrw_p) ) allocate(zrw_p(ims:ime,kms:kme,jms:jme))
             if(.not.allocated(zgw_p) ) allocate(zgw_p(ims:ime,kms:kme,jms:jme))
@@ -370,6 +371,7 @@
           if(allocated(volh_p) ) deallocate(volh_p )
 
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
+          if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
 
             if(allocated(zrw_p) ) deallocate(zrw_p)
             if(allocated(zgw_p) ) deallocate(zgw_p)
@@ -561,11 +563,12 @@
  character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_nssl_ccn_on
+ integer,dimension(:,:),allocatable:: kdbz1km
 
  integer :: tempo_options
 
 !local variables and arrays:
- integer:: istep
+ integer:: istep, i,j,k
  integer, pointer :: do_diag_dbz
  logical :: do_diag_dbz_flag
 
@@ -814,6 +817,22 @@
 
     case ("mp_nssl2m")
        call mpas_timer_start('NSSL2M')
+          IF ( do_diag_dbz_flag ) THEN
+            allocate( kdbz1km(ims:ime,jms:jme) )
+            kdbz1km(:,:) = 1
+
+          do j = jts,jte ! Assuming here that jts == jte (2D arrays)
+          do i = its,ite
+          do k = 2,kte
+            ! find closest kz to 1km
+             if ( z_p(i,k,j) - z_p(i,1,j) .gt. 1000.) THEN
+                kdbz1km(i,j) = k - 1
+                exit
+             endif
+          enddo
+          enddo
+          enddo
+          ENDIF
           call nssl_2mom_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
@@ -832,11 +851,17 @@
                   has_reqc  = has_reqc    , has_reqi   = has_reqi     , has_reqs   = has_reqs     , &
                   diagflag  = l_diags     , dbz        = refl10cm_p   , &
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
+                  refl_diagnostic = refl10cm_1km_p, diag_dbz = do_diag_dbz_flag, kdbz1km=kdbz1km  , &
                   f_cn       =  config_nssl_ccn_on, &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte           , &
                   errmsg    = errmsg      , errflg     = errflg    )
+
+          IF ( do_diag_dbz_flag ) THEN
+            deallocate( kdbz1km )
+            ! find closest kz to 1km
+          ENDIF
 
        call mpas_timer_stop('NSSL2M')
 
@@ -1370,7 +1395,23 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
        call physics_error_fatal('--- calculation of radar reflectivity is not available' // &
                                  'with kessler cloud microphysics')
 
-    case ("mp_wsm6","mp_tempo","mp_nssl2m")
+    case ("mp_nssl2m")
+
+       ! Reflectivity is already computed in the refl10cm_1km_p array, so just
+       ! compare against previous values
+       !if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
+       call mpas_log_write("Computing refl10cm_1km_max")
+       call mpas_log_write("max before = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
+       do j = jts,jte ! Assuming here that jts == jte (2D arrays)
+       do i = its,ite
+
+          refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km_p(i,j))
+
+        enddo
+        enddo
+       call mpas_log_write("max after = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
+
+    case ("mp_wsm6","mp_tempo")
        do i = its,ite
           refl10cm_1km_max(i) = max(refl10cm_1km_max(i),refl10cm_1km(i))
        enddo
