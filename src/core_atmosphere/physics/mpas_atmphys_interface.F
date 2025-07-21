@@ -884,7 +884,16 @@
              enddo
              enddo
              enddo
-             
+
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc_p(i,j) = 0.0 ! nssl module returns max, so set to zero to get current value
+                max_hail_diameter_column_p(i,j) = 0.0 
+             enddo
+             enddo
+
              IF ( config_nssl_3moment ) THEN
                call mpas_pool_get_dimension(state,'index_zrw'  ,index_zrw  )
                call mpas_pool_get_dimension(state,'index_zgw'  ,index_zgw  )
@@ -1427,6 +1436,15 @@
           enddo
           enddo
           enddo
+
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_sfc' ,max_hail_diameter_sfc)
+             call mpas_pool_get_array(diag_physics,'max_hail_diameter_column' ,max_hail_diameter_column)
+             do j = jts,jte
+             do i = its,ite
+                max_hail_diameter_sfc(i) = max_hail_diameter_sfc_p(i,j)
+                max_hail_diameter_column(i) = max_hail_diameter_column_p(i,j)
+             enddo
+             enddo
 
           IF ( config_nssl_3moment ) THEN
             call mpas_pool_get_dimension(state,'index_zrw'  ,index_zrw  )

@@ -208,6 +208,9 @@
           if(.not.allocated(hailnc_p) ) allocate(hailnc_p(ims:ime,jms:jme) )
           if(.not.allocated(hailncv_p)) allocate(hailncv_p(ims:ime,jms:jme))
 
+          if(.not.allocated(max_hail_diameter_sfc_p) ) allocate(max_hail_diameter_sfc_p(ims:ime,jms:jme) )
+          if(.not.allocated(max_hail_diameter_column_p) ) allocate(max_hail_diameter_column_p(ims:ime,jms:jme) )
+
        case default
     end select microp2_select
 
@@ -379,6 +382,8 @@
 
           if(allocated(hailnc_p)  ) deallocate(hailnc_p  )
           if(allocated(hailncv_p) ) deallocate(hailncv_p )
+          if(allocated(max_hail_diameter_sfc_p) ) deallocate(max_hail_diameter_sfc_p)
+          if(allocated(max_hail_diameter_column_p) ) deallocate(max_hail_diameter_column_p)
 
        case default
     end select microp2_select
@@ -568,7 +573,7 @@
  integer :: tempo_options
 
 !local variables and arrays:
- integer:: istep, i,j,k
+ integer:: istep, i,j,k, nwp_diag
  integer, pointer :: do_diag_dbz
  logical :: do_diag_dbz_flag
 
@@ -833,6 +838,8 @@
           enddo
           enddo
           ENDIF
+          nwp_diag = 0
+          IF ( l_diags ) nwp_diag = 1
           call nssl_2mom_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
@@ -853,6 +860,8 @@
                   ntmul      = n_microp   , ntcnt      = 1            , lastloop   = .true.       , &
                   refl_diagnostic = refl10cm_1km_p, diag_dbz = do_diag_dbz_flag, kdbz1km=kdbz1km  , &
                   f_cn       =  config_nssl_ccn_on, &
+                  hail_maxk1 = max_hail_diameter_sfc_p, hail_max2d = max_hail_diameter_column_p   , &
+                  nwp_diagnostics = 1,                                                       &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte           , &
@@ -903,7 +912,7 @@
     end if
  endif
 
- if(trim(microp_scheme) == "mp_tempo") then
+ if(trim(microp_scheme) == "mp_tempo" .or. trim(microp_scheme) == "mp_nssl2m") then
     call mpas_log_write('Computing accumulated max hail diameter at the surface')
     call compute_accumulated_max_hail(diag_physics,its,ite)
  endif

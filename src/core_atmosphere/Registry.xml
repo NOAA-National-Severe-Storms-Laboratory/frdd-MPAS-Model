@@ -48,9 +48,9 @@
                      description="dimension of CAM radiation absorption save array"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"
                      description="Two more than the number of atmospheric layers"/>
-		<dim name="nlcat"
-		    description="Number of landuse categories in the input data"/>
-		<dim name="nscat"
+                <dim name="nlcat"
+                    description="Number of landuse categories in the input data"/>
+                <dim name="nscat"
                     description="Number of soil categories in the input data"/>
                 <dim name="lat"
                     description="Number of latitude points in the input ugwp_limb_tau NGW file"/>
@@ -411,9 +411,9 @@
                 <package name="mp_kessler_in" description="parameterization of kessler microphysics."/>
                 <package name="mp_thompson_in" description="parameterization of Thompson cloud microphysics."/>
                 <package name="mp_thompson_aers_in" description="parameterization of aerosol-aware Thompson cloud microphysics."/>
-		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
-		<package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
-		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+                <package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
+                <package name="tempo_aerosolaware_in" description="variables for TEMPO with aerosol-aware microphysics."/>
+                <package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
                 <package name="nssl_hail_in" description="variables for hail in NSSL microphysics."/>
@@ -428,7 +428,7 @@
                 <package name="bl_mynn_in" description="parameterization of MYNN Planetary Boundary Layer."/>
                 <package name="bl_mynnedmf_in" description="parameterization of MYNN-EDMF Planetary Boundary Layer."/>
                 <package name="sf_noahmp_in" description="parameterization of NOAH-MP land surface scheme."/>
-		<package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
+                <package name="bl_myj_in" description="parameterization of MYJ Planetary Boundary Layer."/>
                 <package name="lsm_ruc_in" description="parameterization of the RUC land surface."/>
                 <package name="lsm_noah_in" description="parameterization of the Noah land surface."/>
                 <package name="iau" description="Incremental Analysis Update"/>
@@ -438,7 +438,7 @@
                 <package name="ugwp_orog_stream" description="Input stream (and variables) for UGWP orography"/>
                 <package name="ugwp_ngw_stream"  description="Input stream (and variables) for UGWP NGW lookup table"/>
                 <package name="ugwp_diags_stream" description="Output stream (and variables) for UGWP output diagnostics"/>
-		<package name="gfl_sub3d" description="GFL 3d lateral spreading of the env subsidence"/>
+                <package name="gfl_sub3d" description="GFL 3d lateral spreading of the env subsidence"/>
         </packages>
 
 
@@ -447,7 +447,7 @@
 <!-- **************************************************************************************** -->
 
 	<streams>
-		<stream name="invariant" 
+                <stream name="invariant" 
                         type="input" 
                         filename_template="invariant.nc" 
                         input_interval="none"
@@ -2844,24 +2844,24 @@
                 <!-- ... PARAMETERIZATION OF CLOUD MICROPHYSICS:                                                        -->
                 <!-- ================================================================================================== -->
 
-		<var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
+                <var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter at the surface"
-                     packages="mp_tempo_in"/>
+                     packages="mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
+                <var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter in the vertical column"
-                     packages="mp_tempo_in"/>
+                     packages="mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
+                <var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter in the vertical column accumulated over diagnostic output"
-                     packages="mp_tempo_in"/>
+                     packages="mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
+                <var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
                      description="Maximum hail diameter at the surface accumulated over diagnostic output"
-                     packages="mp_tempo_in"/>
+                     packages="mp_nssl2m_in;mp_tempo_in"/>
 
-		<var name="do_diag_dbz" type="integer" dimensions="" units = ""
-		    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
+                <var name="do_diag_dbz" type="integer" dimensions="" units = ""
+                    description="flag for whether to compute refelctivity at every time step for use in computing output-time-max 1km reflectivity"/>
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" units="dBZ"
                      description="10 cm maximum radar reflectivity"
@@ -4060,7 +4060,7 @@
 
                 <var name="rthcuten" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="tendency of potential temperature due to cumulus convection"
-		     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
+                     packages="cu_grell_freitas_in;cu_grell_freitas_li_in;cu_kain_fritsch_in;cu_ntiedtke_in"/>
 
                 <var name="rqvcuten" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
                      description="tendency of water vapor mixing ratio due to cumulus convection"
@@ -4100,7 +4100,7 @@
 	        <!-- MGD should we add packages to the field below? -->
 	        <var name="rucuten_Edge" type="real"     dimensions="nVertLevels nEdges Time"/>
 
-		<!-- GRELL-FREITAS-LI -->
+                <!-- GRELL-FREITAS-LI -->
                 <var name="sub3d_rthcuten" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
                      description="tendency of potential temperature due to the subsidence created by cumulus convection"
                      packages="cu_grell_freitas_li_in;gfl_sub3d"/>
@@ -4242,16 +4242,16 @@
                 <var name="isltyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant soil category"/>
 
-		<var name="soilf" type="real" dimensions="nscat nCells" units="unitless"
+                <var name="soilf" type="real" dimensions="nscat nCells" units="unitless"
                      packages="lsm_ruc_in"
                      description="fraction of each soil category present"/>
 
                 <var name="ivgtyp" type="integer" dimensions="nCells" units="unitless"
                      description="dominant vegetation category"/>
 
-		<var name="landusef" type="real" dimensions="nlcat nCells" units="unitless"
+                <var name="landusef" type="real" dimensions="nlcat nCells" units="unitless"
                      packages="lsm_ruc_in"
-		     description="fraction of each vegetation category present"/>
+                     description="fraction of each vegetation category present"/>
 
                 <var name="mminlu" type="text" dimensions="" units="unitless"
                      description="land use classification"/>
@@ -4280,7 +4280,7 @@
                 <var name="albedo12m" type="real" dimensions="nMonths nCells" units="percent"
                      description="monthly-mean climatological surface albedo"/>
 
-		<var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
+                <var name="lai12m" type="real" dimensions="nMonths nCells" units="unitless"
                      packages="lsm_ruc_in"
                      description="monthly-mean climatological leaf area index"/>
 
@@ -4290,7 +4290,7 @@
                 <var name="dzs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                      description="soil layer thickness"/>
 
-		<var name="zs" type="real" dimensions="nSoilLevels nCells Time" units="m"
+                <var name="zs" type="real" dimensions="nSoilLevels nCells Time" units="m"
                      description="depth of centers of soil layers"/>
 
                 <var name="sfc_albbck" type="real" dimensions="nCells Time" units="unitless"
@@ -4459,7 +4459,6 @@
 #endif
 
         <var_struct name="tend_iau" time_levs="1" packages="iau">
-			
                 <!-- analysis increments; read from iau input -->
                 <var name="u_amb"     name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
                      description="Horizontal normal velocity increment"/>
@@ -4495,7 +4494,7 @@
                           units="kg kg^{-1}"
                           description="Graupel mixing ratio increment"/>
 
-                     <var name="qh_amb"  name_in_code="qh" array_group="moist" packages="mp_nssl2m_in" units="kg kg^{-1}"
+                     <var name="qh_amb"  name_in_code="qh" array_group="moist" packages="nssl_hail_in" units="kg kg^{-1}"
                           description="Hail mixing ratio increment"/>
                 </var_array>
          </var_struct>
