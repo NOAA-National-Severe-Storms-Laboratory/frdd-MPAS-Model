@@ -470,19 +470,19 @@ module mpas_convective_diagnostics
                 enddo
             endif
 
-            if (is_needed_u10m_mean) then
+            if (is_needed_u10m_mean .and. associated(u10m) ) then
                 do iCell=1,nCellsSolve
                   u10m_mean(iCell) = u10m_mean(iCell) + u10m(iCell) * (1.0_RKIND/real(nsteps))
                 enddo
             endif
 
-            if (is_needed_v10m_mean) then
+            if (is_needed_v10m_mean .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   v10m_mean(iCell) = v10m_mean(iCell) + v10m(iCell) * (1.0_RKIND/real(nsteps))
                 enddo
             endif
 
-            if (is_needed_ws10m_mean) then
+            if (is_needed_ws10m_mean .and. associated(u10m) .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   wind_speed_10m_mean(iCell) = wind_speed_10m_mean(iCell) + sqrt(u10m(iCell)**2+v10m(iCell)**2) *(1.0_RKIND/real(nsteps))
                 enddo
@@ -513,7 +513,7 @@ module mpas_convective_diagnostics
                 enddo
             endif
 
-            if (is_needed_ws10m_max) then
+            if (is_needed_ws10m_max .and. associated(u10m) .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   wind_speed_10m_max(iCell) = max(wind_speed_10m_max(iCell), sqrt(u10m(iCell)**2+v10m(iCell)**2))
                 enddo
