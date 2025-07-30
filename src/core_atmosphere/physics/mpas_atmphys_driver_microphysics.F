@@ -573,7 +573,7 @@
  integer :: tempo_options
 
 !local variables and arrays:
- integer:: istep, i,j,k, nwp_diag
+ integer:: istep, i,j,k
  integer, pointer :: do_diag_dbz
  logical :: do_diag_dbz_flag
 
@@ -838,8 +838,6 @@
           enddo
           enddo
           ENDIF
-          nwp_diag = 0
-          IF ( l_diags ) nwp_diag = 1
           call nssl_2mom_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
@@ -861,7 +859,7 @@
                   refl_diagnostic = refl10cm_1km_p, diag_dbz = do_diag_dbz_flag, kdbz1km=kdbz1km  , &
                   f_cn       =  config_nssl_ccn_on, &
                   hail_maxk1 = max_hail_diameter_sfc_p, hail_max2d = max_hail_diameter_column_p   , &
-                  nwp_diagnostics = 1,                                                       &
+                  nwp_diagnostics = do_diag_dbz,                                                       &
                   ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde           , &
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme           , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte           , &
