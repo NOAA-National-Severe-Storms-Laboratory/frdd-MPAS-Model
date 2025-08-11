@@ -13,3 +13,9 @@
 [submodule "src/core_atmosphere/physics/physics_noaa/GFL"]
 	path = src/core_atmosphere/physics/physics_noaa/GFL
 	url = https://github.com/NOAA-GSL/GFL.git
+[submodule "src/core_atmosphere/physics/physics_noaa/NSSL-MP"]
+	path = src/core_atmosphere/physics/physics_noaa/NSSL-MP
+	url = https://github.com/NOAA-National-Severe-Storms-Laboratory/NSSL-MP.git
+[submodule "NSSL-MP"]
+	path = NSSL-MP
+	url = https://github.com/NOAA-National-Severe-Storms-Laboratory/NSSL-MP.git

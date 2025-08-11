@@ -65,6 +65,7 @@ core_physics_mmm: core_physics_init
 
 core_microphysics: core_physics_init core_physics_mmm
 	(cd physics_noaa/TEMPO; cp ./drivers/mpas/module_mp_tempo.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd physics_noaa/NSSL-MP; cp ./MPAS/Makefile .; cp ./MPAS/mp_nssl.F90 .; $(MAKE) COREDEF="$(COREDEF)")
 
 core_mynnedmf: core_physics_init core_physics_mmm
 	(cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; cp ./MPAS/module_bl_mynnedmf_driver.F90 .; cp ./MPAS/module_bl_mynnedmf_common.F90 .; $(MAKE) all)
@@ -276,6 +277,7 @@ clean:
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
 	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) clean; fi )
+	( if [ -d physics_noaa/NSSL-MP ]; then cd physics_noaa/NSSL-MP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )
 	( if [ -d physics_noaa/MYNN-EDMF ]; then cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean; fi )
@@ -288,16 +290,22 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility \
+               -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO  -I./physics_noaa/NSSL-mp   \
+               -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I..         \
+               -I../../framework -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf \
+               -I./physics_noahmp -I./physics_noahmp/utility -I./physics_noahmp/drivers/mpas -I./physics_noahmp/src \
+               -I./physics_noaa/TEMPO -I./physics_noaa/NSSL-mp -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL \
+               -I.. -I../../framework -I../../external/esmf_time_f90
 endif
 
 .F90.o:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noaa/TEMPO -I./physics_noaa/NSSL-mp -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I.. -I../../framework -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noaa/TEMPO -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I.. -I../../framework -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F90 $(CPPINCLUDES) $(FCINCLUDES) -I./physics_mmm -I./physics_wrf -I./physics_noaa/TEMPO -I./physics_noaa/NSSL-mp -I./physics_noaa/UGWP -I./physics_noaa/MYNN-EDMF -I./physics_noaa/RUCLSM -I./physics_noaa/GFL -I.. -I../../framework -I../../external/esmf_time_f90
 endif

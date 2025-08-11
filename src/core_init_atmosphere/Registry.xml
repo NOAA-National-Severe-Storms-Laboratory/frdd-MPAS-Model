@@ -1302,6 +1302,24 @@
                         <var name="ng" array_group="number" units="nb kg^{-1}"
                              description="Graupel number concentration"/>
 
+                        <var name="nh" array_group="number" units="nb kg^{-1}"
+                             description="Hail number concentration"/>
+
+                        <var name="volg" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Graupel particle volume"/>
+
+                        <var name="volh" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Hail particle volume"/>
+
+                        <var name="zrw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Rain reflectivity moment"/>
+
+                        <var name="zgw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Graupel reflectivity moment"/>
+
+                        <var name="zhw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Hail reflectivity moment"/>
+
                         <var name="nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
@@ -1382,6 +1400,15 @@
 
                         <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of hail particle volume"/>
+
+                        <var name="lbc_zgw" name_in_code="zgw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of graupel reflectivity"/>
+
+                        <var name="lbc_zhw" name_in_code="zhw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of hail reflectivity"/>
+
+                        <var name="lbc_zrw" name_in_code="zrw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of rain reflectivity"/>
 
                         <var name="lbc_nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration on lateral boundary cells"
