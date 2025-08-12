@@ -1401,13 +1401,13 @@
                         <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of hail particle volume"/>
 
-                        <var name="lbc_zgw" name_in_code="zgw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                        <var name="lbc_zgw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
                              description="Lateral boundary tendency of graupel reflectivity"/>
 
-                        <var name="lbc_zhw" name_in_code="zhw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                        <var name="lbc_zhw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
                              description="Lateral boundary tendency of hail reflectivity"/>
 
-                        <var name="lbc_zrw" name_in_code="zrw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                        <var name="lbc_zrw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
                              description="Lateral boundary tendency of rain reflectivity"/>
 
                         <var name="lbc_nifa" array_group="number" units="nb kg^{-1}"
