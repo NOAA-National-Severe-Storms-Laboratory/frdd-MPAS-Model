@@ -406,6 +406,7 @@
  logical,pointer:: config_microp_re
 
 
+ integer,pointer:: config_n_microp
  integer,pointer:: cam_dim1
  integer,pointer:: nMonths
  integer,pointer:: nAerosols,nAerLevels,nOznLevels
@@ -439,6 +440,7 @@
  call mpas_pool_get_config(configs,'config_sst_update'       ,config_sst_update       )
  call mpas_pool_get_config(configs,'config_frac_seaice'      ,config_frac_seaice      )
  call mpas_pool_get_config(configs,'config_microp_re'        ,config_microp_re        )
+ call mpas_pool_get_config(configs,'config_n_microp'         ,config_n_microp         )
 
  call mpas_get_timeInterval(mpas_get_clock_timestep(clock, ierr), dt=dt)
 
@@ -687,19 +689,19 @@
 !... dynamics:
  dt_dyn    = dt
 !... cloud microphysics:
- dt_microp = dt_dyn
- n_microp  = 1
+ n_microp  = config_n_microp
+ dt_microp = dt_dyn/n_microp
  if(trim(config_microp_scheme)=='mp_thompson' .or. &
     trim(config_microp_scheme)=='mp_tempo'    .or. &
     trim(config_microp_scheme)=='mp_thompson_aerosols') then
     dt_microp = 90._RKIND
-    n_microp  = max(nint(dt_dyn/dt_microp),1)
+    n_microp  = max(nint(dt_dyn/dt_microp),n_microp)
     dt_microp = dt_dyn / n_microp
     if(dt_dyn <= dt_microp) dt_microp = dt_dyn
  endif
  if(trim(config_microp_scheme)=='mp_nssl2m') then
     if( dt_dyn > 75._RKIND) then ! max 75s dt
-      n_microp  = max(nint(dt_dyn/60._RKIND),2)
+      n_microp  = max(nint(dt_dyn/60._RKIND),Max(2,n_microp))
       dt_microp = dt_dyn / n_microp
     endif
  endif

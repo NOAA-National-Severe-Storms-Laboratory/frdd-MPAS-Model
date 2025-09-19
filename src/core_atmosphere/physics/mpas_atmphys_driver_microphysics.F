@@ -344,8 +344,8 @@
           if(allocated(muc_p)) deallocate(muc_p)
           if(allocated(ni_p) ) deallocate(ni_p )
           if(allocated(nr_p) ) deallocate(nr_p )
-          if(allocated(refl10cm_p)  ) deallocate(refl10cm_p  )
 
+          if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
 
           microp3_select: select case(trim(microp_scheme))
@@ -839,6 +839,7 @@
           enddo
           enddo
           ENDIF
+          ! uses an inner loop (ntmul) for substepping, so no outer loop is needed for n_microp
           call nssl_2mom_driver( &
                   th        = th_p        , qv         = qv_p         , qc         = qc_p         , &
                   qr        = qr_p        , qi         = qi_p         , qs         = qs_p         , &
@@ -957,7 +958,7 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
-  call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
+ call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
 
  call mpas_pool_get_array(diag_physics,'graupelncv',graupelncv)
  call mpas_pool_get_array(diag_physics,'rainncv'   ,rainncv   )
@@ -1125,6 +1126,7 @@
           graupelnc(i) = graupelnc(i) + graupelncv(i)
        enddo
        enddo
+
        IF ( microp_scheme == "mp_nssl2m" .and. config_nssl_hail_on ) THEN
        do j = jts,jte
        do i = its,ite
