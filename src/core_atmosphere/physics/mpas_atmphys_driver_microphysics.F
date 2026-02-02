@@ -1411,7 +1411,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
        ! compare against previous values
        !if(.not.allocated(zp)   ) allocate(zp(kts:kte)   )
        call mpas_log_write("Computing refl10cm_1km_max")
-       call mpas_log_write("max before = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
+      ! call mpas_log_write("max before = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
        do j = jts,jte ! Assuming here that jts == jte (2D arrays)
        do i = its,ite
 
@@ -1419,7 +1419,7 @@ subroutine compute_hourly_max_radar_reflectivity(configs,diag_physics,its,ite)
 
         enddo
         enddo
-       call mpas_log_write("max after = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
+      ! call mpas_log_write("max after = $r dbz", realArgs=(/maxval(refl10cm_1km_max)/))
 
     case ("mp_wsm6","mp_tempo")
        do i = its,ite
