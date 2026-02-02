@@ -1986,7 +1986,7 @@ module atm_time_integration
       !$acc kernels
       theta_m_2(:,cellEnd+1) = 0.0_RKIND
       !$acc end kernels
-
+!$OMP BARRIER
       !$acc parallel default(present)
       !$acc loop gang worker
       do iEdge = edgeStart,edgeEnd
@@ -2028,6 +2028,7 @@ module atm_time_integration
          end do
       end do
       !$acc end parallel
+!$OMP BARRIER
 
       MPAS_ACC_TIMER_START('atm_rk_integration_setup [ACC_data_xfer]')
       !$acc exit data copyout(ru_save, rw_save, rtheta_p_save, rho_p_save, u_2, &
