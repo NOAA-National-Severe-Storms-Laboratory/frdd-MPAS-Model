@@ -1880,28 +1880,30 @@ module atm_time_integration
       !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
       !       so we use the advance_scalars routine for the first two RK substeps.
       !
-      !$OMP PARALLEL DO
-      do thread=1,nThreads
          if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+      !$OMP PARALLEL DO
+           do thread=1,nThreads
             call atm_advance_scalars(field_name, tend, state, diag, mesh, block % configs, rk_timestep(rk_step), &
                                      cellThreadStart(thread), cellThreadEnd(thread), &
                                      edgeThreadStart(thread), edgeThreadEnd(thread), &
                                      cellSolveThreadStart(thread), cellSolveThreadEnd(thread), &
                                      horiz_flux_array, rk_step, config_time_integration_order, &
                                      advance_density=config_split_dynamics_transport)
+           end do
+      !$OMP END PARALLEL DO
          else
+            ! openmp actually slows down scalars_mono because the outer loop is on the scalars and leaves
+            ! insufficient work in the inner loops
             call atm_advance_scalars_mono(field_name, block, tend, state, diag, mesh, halo_scratch, &
                                           block % configs, rk_timestep(rk_step), &
-                                          cellThreadStart(thread), cellThreadEnd(thread), &
-                                          edgeThreadStart(thread), edgeThreadEnd(thread), &
-                                          cellSolveThreadStart(thread), cellSolveThreadEnd(thread), &
+                                          cellThreadStart(1), cellThreadEnd(nThreads), &
+                                          edgeThreadStart(1), edgeThreadEnd(nThreads), &
+                                          cellSolveThreadStart(1), cellSolveThreadEnd(nThreads), &
                                           scalar_old_arr, scalar_new_arr, s_max_arr, s_min_arr, wdtn_arr, &
                                           flux_array, flux_upwind_tmp_arr, flux_tmp_arr, &
                                           exchange_halo_group, &
                                           advance_density=config_split_dynamics_transport, rho_zz_int=rho_zz_int)
          end if
-      end do
-      !$OMP END PARALLEL DO
 
       deallocate(scalar_old_arr)
       deallocate(scalar_new_arr)
