@@ -226,6 +226,7 @@
     zrw_p,            &!rain reflectivity                                                   [m6/kg]
     zgw_p,            &!graupel reflectivity                                                [m6/kg]
     zhw_p,            &!hail reflectivity                                                   [m6/kg]
+    zgrid_p,          &!for smoke
     nwfa_p,           &!water-friendly aerosols
     nifa_p             !ice-friendly aerosols
 
