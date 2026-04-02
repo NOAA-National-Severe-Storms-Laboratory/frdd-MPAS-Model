@@ -42,10 +42,10 @@
  character(len=StrKIND),pointer:: config_lsm_scheme
  character(len=StrKIND),pointer:: config_smoke_scheme
  character(len=StrKIND),pointer:: config_dust_scheme
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: mp_kessler_in,mp_thompson_in,mp_thompson_aers_in,mp_wsm6_in,mp_nssl2m_in,nssl3m_in
  logical,pointer:: nssl_hail_in,nssl3m_hail_in,nssl_ccn_in
- logical,pointer:: mp_tempo_in, tempo_hailaware_in, tempo_aerosolaware_in
+ logical,pointer:: mp_tempo_in,tempo_hailaware_in,tempo_aerosolaware_in
  logical,pointer:: cu_grell_freitas_in,cu_grell_freitas_li_in,cu_kain_fritsch_in,cu_ntiedtke_in
  logical,pointer:: bl_mynn_in,bl_mynnedmf_in,bl_ysu_in,bl_myj_in
  logical,pointer:: lsm_noah_in,lsm_ruc_in
@@ -70,8 +70,8 @@
  call mpas_pool_get_config(configs,'config_nssl_3moment',config_nssl_3moment)
  call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
  call mpas_pool_get_config(configs,'config_nssl_ccn_on',config_nssl_ccn_on)
- call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
 
  nullify(mp_kessler_in)
  call mpas_pool_get_package(packages,'mp_kessler_inActive',mp_kessler_in)
@@ -145,12 +145,8 @@
     mp_wsm6_in = .true.
  elseif(config_microp_scheme == 'mp_tempo') then
     mp_tempo_in = .true.
-    if (config_tempo_aerosolaware) then
-       tempo_aerosolaware_in = .true.
-    endif
-    if (config_tempo_hailaware) then
-       tempo_hailaware_in = .true.
-    endif
+    if (config_tempo_aerosolaware) tempo_aerosolaware_in = .true.
+    if (config_tempo_hailaware) tempo_hailaware_in = .true.
  elseif(config_microp_scheme == 'mp_nssl2m') then
    call mpas_log_write('    config_nssl_hail_on            = $l', logicArgs=(/config_nssl_hail_on/))
    call mpas_log_write('    config_nssl_ccn_on             = $l', logicArgs=(/config_nssl_ccn_on/))

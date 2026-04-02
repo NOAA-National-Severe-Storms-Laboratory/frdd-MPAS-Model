@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.1-2.1">
+<registry model="mpas" core="atmosphere" core_abbrev="atm" version="8.3.1-noaa">
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -1267,47 +1267,6 @@
                         <var name="lbc_rho" />
                         <var name="lbc_theta" />
                         <var_array name="lbc_scalars" />
-                </stream>
-
-                <stream name="ugwp_oro_data_in"
-                        type="input"
-                        filename_template="x1.40962.ugwp_oro_data.nc"
-                        input_interval="initial_only"
-                        immutable="true"
-                        packages="ugwp_orog_stream">
-
-                        <var name="var2dls"/>
-                        <var name="conls"/>
-                        <var name="oa1ls"/>
-                        <var name="oa2ls"/>
-                        <var name="oa3ls"/>
-                        <var name="oa4ls"/>
-                        <var name="ol1ls"/>
-                        <var name="ol2ls"/>
-                        <var name="ol3ls"/>
-                        <var name="ol4ls"/>
-                        <var name="var2dss"/>
-                        <var name="conss"/>
-                        <var name="oa1ss"/>
-                        <var name="oa2ss"/>
-                        <var name="oa3ss"/>
-                        <var name="oa4ss"/>
-                        <var name="ol1ss"/>
-                        <var name="ol2ss"/>
-                        <var name="ol3ss"/>
-                        <var name="ol4ss"/>
-                </stream>
-
-                <stream name="ugwp_ngw_in"
-                        type="input"
-                        filename_template="ugwp_limb_tau.nc"
-                        input_interval="initial_only"
-                        immutable="true"
-                        packages="ugwp_ngw_stream">
-
-                        <var name="LATS"/>
-                        <var name="DAYS"/>
-                        <var name="ABSMF"/>
                 </stream>
 
 #ifdef DO_PHYSICS
@@ -2779,28 +2738,18 @@
                      description="configuration for cloud microphysics schemes"
                      possible_values="`suite',`mp_wsm6',`mp_tempo',`mp_thompson',`mp_thompson_aerosols', `mp_kessler',`mp_nssl2m',`off'"/>
 
-                <nml_option name="config_tempo_hailaware" type="logical" default_value="false" in_defaults="false"
-                     units="-"
-                     description="Logical flag to turn on/off prognostic graupel number concentration and rime density"
-                     possible_values=".true. or .false."/>
-
-		<nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
-		     units="-"
+               <nml_option name="config_tempo_cldfra" type="logical" default_value="false" in_defaults="false"
+		           units="-"
                      description="Logical flag to turn on/off prognostic cloud fraction"
                      possible_values=".true. or .false."/>
 
-		<nml_option name="config_tempo_ml_nc_pbl" type="logical" default_value="false" in_defaults="false"
-		     units="-"
-                     description="Logical flag to turn on/off ML prediction of boundary layer cloud number concentrations"
-                     possible_values=".true. or .false."/>
-
-                <nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
-                     units="-"
+               <nml_option name="config_tempo_ml_nc" type="logical" default_value="false" in_defaults="false"
+		           units="-"
                      description="Logical flag to turn on/off ML prediction of microphysics cloud number concentrations"
                      possible_values=".true. or .false."/>
 
-                <nml_option name="config_tempo_ml_nr" type="logical" default_value="false" in_defaults="false"
-                     units="-"
+               <nml_option name="config_tempo_ml_nr" type="logical" default_value="false" in_defaults="false"
+		           units="-"
                      description="Logical flag to turn on/off ML prediction of microphysics rain number concentrations"
                      possible_values=".true. or .false."/>
 
@@ -3041,11 +2990,6 @@
                      description="configuration for spp boundary layer"
                      possible_values="`0: off',`1: activated'"/>
 
-		<nml_option name="config_tempo_aerosolaware" type="logical" default_value="true" in_defaults="false"
-                     units="-"
-                     description="Logical flag to turn on/off prognostic cloud droplet and aerosol number concentrations"
-                     possible_values=".true. or .false."/>
-
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
                      units="-"
                      description="threshold above which accumulated radiation diagnostics are reset"
@@ -3113,19 +3057,19 @@
                 <!-- ================================================================================================== -->
 
                 <var name="max_hail_diameter_sfc" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter at the surface"
+                     description="Instantaneous maximum hail diameter at the surface"
                      packages="mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="max_hail_diameter_column" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter in the vertical column"
-                     packages="mp_nssl2m_in;mp_tempo_in"/>
-
-                <var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter in the vertical column accumulated over diagnostic output"
+                     description="Instantaneous maximum hail diameter in the vertical column"
                      packages="mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="max_hail_diameter_sfc_acc" type="real" dimensions="nCells Time" units="mm"
-                     description="Maximum hail diameter at the surface accumulated over diagnostic output"
+                     description="Maximum hail diameter at the surface during the diagnostic output time window"
+                     packages="mp_nssl2m_in;mp_tempo_in"/>
+
+                <var name="max_hail_diameter_column_acc" type="real" dimensions="nCells Time" units="mm"
+                     description="Maximum hail diameter in the vertical column during the diagnostic output time window"
                      packages="mp_nssl2m_in;mp_tempo_in"/>
 
                 <var name="do_diag_dbz" type="integer" dimensions="" units = ""
@@ -3713,10 +3657,10 @@
                 <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
                 <!-- ================================================================================================== -->
 
-		<var name="dusfcg" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+		<var name="dusfcg" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated gravity wave drag over orography u-stress"/>
 
-                <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa m s^{-1}"
+                <var name="dvsfcg" type="real" dimensions="nCells Time" units="Pa"
                      description="vertically-integrated gravity wave drag over orography v-stress"/>
 
                 <var name="dusfc_ls" type="real" dimensions="nCells Time" units="Pa"
@@ -3751,10 +3695,10 @@
                      description="vertically-integrated turb orog form drag v-stress"
                      packages="ugwp_diags_stream"/>
 
-                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtaux3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="gravity wave drag over orography u-stress"/>
 
-                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                <var name="dtauy3d" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
                      description="gravity wave drag over orography v-stress"/>
 
                 <var name="dtaux3d_ls" type="real" dimensions="nVertLevels nCells Time" units="m s^{-2}"
@@ -4776,6 +4720,7 @@
 
 #ifdef DO_PHYSICS
 #include "physics/Registry_noahmp.xml"
+#include "physics/Registry_tempo.xml"
 #include "physics/registry.chemistry.xml"
 #endif
 </registry>

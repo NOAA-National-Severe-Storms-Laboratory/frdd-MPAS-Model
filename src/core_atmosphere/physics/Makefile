@@ -65,7 +65,7 @@ core_physics_mmm: core_physics_init
 	(cd physics_mmm; $(MAKE) -f Makefile.mpas all)
 
 core_microphysics: core_physics_init core_physics_mmm
-	(cd physics_noaa/TEMPO; cp ./drivers/mpas/module_mp_tempo.F90 .; $(MAKE) all COREDEF="$(COREDEF)")
+	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas)
 	(cd physics_noaa/NSSL-MP; cp ./MPAS/Makefile .; cp ./MPAS/mp_nssl.F90 .; $(MAKE) COREDEF="$(COREDEF)")
 
 core_SMOKE: core_physics_init
@@ -86,7 +86,7 @@ core_UGWP: core_physics_init
 core_physics_wrf: core_physics_init core_physics_mmm core_UGWP
 	(cd physics_wrf; $(MAKE) all COREDEF="$(COREDEF)")
 
-core_physics_noahmp:
+core_physics_noahmp: core_physics_init
 	(cd physics_noahmp/utility; $(MAKE) all COREDEF="$(COREDEF)")
 	(cd physics_noahmp/src; $(MAKE) all COREDEF="$(COREDEF)")
 	(cd physics_noahmp/drivers/mpas; $(MAKE) all COREDEF="$(COREDEF)")
@@ -287,7 +287,7 @@ clean:
 	( cd physics_noahmp/drivers/mpas; $(MAKE) clean )
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
-	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) clean; fi )
+	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas clean; fi )
 	( if [ -d physics_noaa/NSSL-MP ]; then cd physics_noaa/NSSL-MP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )

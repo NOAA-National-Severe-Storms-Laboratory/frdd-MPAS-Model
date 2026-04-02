@@ -682,8 +682,8 @@
 !TEMPO/NSSL
  logical,pointer:: config_nssl_3moment
  logical,pointer:: config_nssl_hail_on, config_nssl_ccn_on
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_nc_pbl
+ logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
+ logical,pointer:: config_tempo_ml_for_bl_nc
  integer,pointer:: index_zrw,index_zgw,index_zhw
  integer,pointer:: index_volg,index_volh
  
@@ -711,10 +711,10 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',mp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
- call mpas_pool_get_config(configs,'config_tempo_ml_nc_pbl',config_tempo_ml_nc_pbl)
  call mpas_pool_get_config(configs,'config_nssl_3moment',config_nssl_3moment)
  call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
  call mpas_pool_get_config(configs,'config_nssl_ccn_on',config_nssl_ccn_on)
+ call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -991,7 +991,7 @@
              enddo
              enddo
 
-             if(config_tempo_ml_nc_pbl) then
+             if(config_tempo_ml_for_bl_nc) then
                 call mpas_pool_get_array(diag_physics,'qc_bl',qc_bl)
                 call mpas_pool_get_array(diag_physics,'cldfrac_bl',cldfrac_bl)
                 do j = jts, jte

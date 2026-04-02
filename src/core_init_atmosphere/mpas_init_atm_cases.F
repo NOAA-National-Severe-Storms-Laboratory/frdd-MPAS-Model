@@ -70,7 +70,6 @@ module init_atm_cases
       logical, pointer :: config_native_gwd_static
       logical, pointer :: config_native_gwd_gsl_static
       logical, pointer :: config_met_interp
-      logical, pointer :: config_aerosol_climo
       logical, pointer :: config_blend_bdy_terrain
       character (len=StrKIND), pointer :: config_start_time
       character (len=StrKIND), pointer :: config_met_prefix
@@ -232,7 +231,6 @@ module init_atm_cases
             call mpas_pool_get_config(block_ptr % configs, 'config_native_gwd_static', config_native_gwd_static)
             call mpas_pool_get_config(block_ptr % configs, 'config_native_gwd_gsl_static', config_native_gwd_gsl_static)
             call mpas_pool_get_config(block_ptr % configs, 'config_met_interp', config_met_interp)
-            call mpas_pool_get_config(block_ptr % configs, 'config_aerosol_climo', config_aerosol_climo)
             call mpas_pool_get_config(block_ptr % configs, 'config_blend_bdy_terrain', config_blend_bdy_terrain)
 
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
@@ -396,8 +394,6 @@ module init_atm_cases
                call mpas_pool_get_dimension(block_ptr % dimensions, 'nCells', nCells)
                call mpas_pool_get_dimension(block_ptr % dimensions, 'nEdges', nEdges)
                call mpas_pool_get_dimension(block_ptr % dimensions, 'nVertLevels', nVertLevels)
-
-               call mpas_pool_get_config(block_ptr % configs, 'config_aerosol_climo', config_aerosol_climo)
 
                call mpas_get_time(curr_time, dateTimeString=timeString)
                xtime = timeString   ! Set field valid time, xtime, to the current time in the time loop
@@ -7446,13 +7442,16 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_smoke_fine  ) ) sorted_arrQ11(:,:) = -999.0
          if (associated(index_dust_fine   ) ) sorted_arrQ12(:,:) = -999.0
          if (associated(index_dust_coarse ) ) sorted_arrQ13(:,:) = -999.0
+
          IF ( index_nwfa > 0 ) scalars(index_nwfa,:,iCell) = 0._RKIND
          IF ( index_nifa > 0 ) scalars(index_nifa,:,iCell) = 0._RKIND
+
          scalars(index_qc,:,iCell) = 0._RKIND
          scalars(index_qr,:,iCell) = 0._RKIND
          scalars(index_qi,:,iCell) = 0._RKIND
          scalars(index_qs,:,iCell) = 0._RKIND
          scalars(index_qg,:,iCell) = 0._RKIND
+
          IF ( index_nc > 0 ) scalars(index_nc,:,iCell) = 0._RKIND
          IF ( index_ni > 0 ) scalars(index_ni,:,iCell) = 0._RKIND
          IF ( index_nr > 0 ) scalars(index_nr,:,iCell) = 0._RKIND

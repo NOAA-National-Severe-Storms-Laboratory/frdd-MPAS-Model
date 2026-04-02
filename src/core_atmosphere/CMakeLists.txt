@@ -139,7 +139,7 @@ set(ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_SMOKE_SOURCES PREPEND physics/physics_noaa/SMOKE/)
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_mmm)
-
+set(PHYSICS_MMM_REF "20250616-MPASv8.3")
 if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     set(PHYSICS_MMM_REPO_URL "https://github.com/NCAR/MMM-physics")
     execute_process(COMMAND git clone ${PHYSICS_MMM_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR}
@@ -149,9 +149,19 @@ if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR})
     if(NOT GIT_CLONE_RESULT EQUAL 0)
         message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
     endif()
-
+    # Checkout a specific tag or commit
+    execute_process(COMMAND git checkout ${PHYSICS_MMM_REF}
+                    WORKING_DIRECTORY ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR}
+                    RESULT_VARIABLE GIT_CHECKOUT_RESULT
+                    OUTPUT_VARIABLE GIT_CHECKOUT_OUTPUT
+                    ERROR_VARIABLE GIT_CHECKOUT_ERROR)
+    if(NOT GIT_CHECKOUT_RESULT EQUAL 0)
+        message(WARNING
+                "Failed to checkout ${PHYSICS_MMM_REF}, using default branch. "
+                "git error: ${GIT_CHECKOUT_ERROR}")
+    endif()
 else()
-    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+    message(STATUS "Directory ${ATMOSPHERE_CORE_PHYSICS_MMM_DIR} already exists, skipping clone")
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES
@@ -172,7 +182,7 @@ set(ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_MMM_SOURCES PREPEND physics/physics_mmm/)
 
 set(ATMOSPHERE_CORE_PHYSICS_UGWP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/UGWP)
-
+set(PHYSICS_UGWP_REF "MPAS_20241223")
 if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR})
     set(PHYSICS_UGWP_REPO_URL "https://github.com/NOAA-GSL/UGWP.git")
     execute_process(COMMAND git clone ${PHYSICS_UGWP_REPO_URL} ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR}
@@ -182,9 +192,19 @@ if(NOT EXISTS ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR})
     if(NOT GIT_CLONE_RESULT EQUAL 0)
         message(FATAL_ERROR "Git clone failed with error: ${GIT_CLONE_ERROR}")
     endif()
-
+    # Checkout a specific tag or commit
+    execute_process(COMMAND git checkout ${PHYSICS_UGWP_REF}
+                    WORKING_DIRECTORY ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR}
+                    RESULT_VARIABLE GIT_CHECKOUT_RESULT
+                    OUTPUT_VARIABLE GIT_CHECKOUT_OUTPUT
+                    ERROR_VARIABLE GIT_CHECKOUT_ERROR)
+    if(NOT GIT_CHECKOUT_RESULT EQUAL 0)
+        message(WARNING
+                "Failed to checkout ${PHYSICS_UGWP_REF} (exit code ${GIT_CHECKOUT_RESULT}); "
+                "stdout: ${GIT_CHECKOUT_OUTPUT}; stderr: ${GIT_CHECKOUT_ERROR}. Using default branch.")
+    endif()
 else()
-    message(STATUS "Directory ${DIR_TO_CHECK} already exists, skipping clone")
+    message(STATUS "Directory ${ATMOSPHERE_CORE_PHYSICS_UGWP_DIR} already exists, skipping clone")
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_UGWP_SOURCES
@@ -216,13 +236,17 @@ else()
 endif()
 
 set(ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES
-    module_mp_tempo_main.F90
-    module_mp_tempo_params.F90
-    module_mp_tempo_utils.F90
-    module_mp_tempo_ml.F90
-    drivers/mpas/module_mp_tempo.F90
+    src/module_mp_tempo_cfgs.F90
+    src/module_mp_tempo_params.F90
+    src/module_mp_tempo_ml.F90
+    src/module_mp_tempo_utils.F90
+    src/module_mp_tempo_diags.F90
+    src/module_mp_tempo_aerosols.F90
+    src/module_mp_tempo_main.F90
+    src/module_mp_tempo_driver.F90
 )
 list(TRANSFORM ATMOSPHERE_CORE_PHYSICS_TEMPO_SOURCES PREPEND physics/physics_noaa/TEMPO/)
+set_source_files_properties(physics/physics_noaa/TEMPO/src/module_mp_tempo_params.F90 PROPERTIES COMPILE_OPTIONS "-Dtempo_mpas")
 
 set(ATMOSPHERE_CORE_PHYSICS_NSSL-MP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics_noaa/NSSL-MP)
 
