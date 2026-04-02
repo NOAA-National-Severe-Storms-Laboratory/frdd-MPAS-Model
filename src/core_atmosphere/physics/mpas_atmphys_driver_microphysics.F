@@ -109,15 +109,9 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
-<<<<<<< HEAD
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
- logical,pointer:: config_tempo_ml_nc_pbl
- logical,pointer:: config_nssl_3moment
-=======
- character(len=StrKIND),pointer:: nssl_moments
  logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_tempo_ml_for_bl_nc
->>>>>>> gsl/rrfs
+ logical,pointer:: config_nssl_3moment
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
@@ -207,9 +201,9 @@
           if(.not.allocated(refl10cm_p)) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
 
-            if(.not.allocated(zrw_p) ) allocate(zrw_p(ims:ime,kms:kme,jms:jme))
-            if(.not.allocated(zgw_p) ) allocate(zgw_p(ims:ime,kms:kme,jms:jme))
-            if(.not.allocated(zhw_p) ) allocate(zhw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(zrw_p) ) allocate(zrw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(zgw_p) ) allocate(zgw_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(zhw_p) ) allocate(zhw_p(ims:ime,kms:kme,jms:jme))
 
           if(.not.allocated(hailnc_p) ) allocate(hailnc_p(ims:ime,jms:jme) )
           if(.not.allocated(hailncv_p)) allocate(hailncv_p(ims:ime,jms:jme))
@@ -242,59 +236,32 @@
        if(.not.allocated(rainprod_p)) allocate(rainprod_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(evapprod_p)) allocate(evapprod_p(ims:ime,kms:kme,jms:jme))
 
-       microp2a_select: select case(trim(microp_scheme))
-        case("mp_tempo")
-          if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
-          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
-          if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
-          if(.not.allocated(max_hail_diameter_sfc_p) ) allocate(max_hail_diameter_sfc_p(ims:ime,jms:jme) )
-          if(.not.allocated(max_hail_diameter_column_p) ) allocate(max_hail_diameter_column_p(ims:ime,jms:jme) )
+       if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
+       if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
+       if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
+       if(.not.allocated(frainnc_p) ) allocate(frainnc_p(ims:ime,jms:jme) )
+       if(.not.allocated(max_hail_diameter_sfc_p) ) allocate(max_hail_diameter_sfc_p(ims:ime,jms:jme) )
+       if(.not.allocated(max_hail_diameter_column_p) ) allocate(max_hail_diameter_column_p(ims:ime,jms:jme) )
 
-          if (config_tempo_aerosolaware) then
-             if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
-             if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
-             if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
-             if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
-          endif
+       if (config_tempo_aerosolaware) then
+          if(.not.allocated(nifa2d_p)) allocate(nifa2d_p(ims:ime,jms:jme))
+          if(.not.allocated(nwfa2d_p)) allocate(nwfa2d_p(ims:ime,jms:jme))
+          if(.not.allocated(nc_p)    ) allocate(nc_p(ims:ime,kms:kme,jms:jme)  )
+          if(.not.allocated(nifa_p)  ) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nwfa_p)  ) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+       endif
 
-<<<<<<< HEAD
-=======
-          if (config_tempo_hailaware) then
-             if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
-          endif
-
-          if (config_tempo_ml_for_bl_nc) then
-             if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
-          endif
-
-        case("mp_nssl2m")
-          if(.not.allocated(qh_p) ) allocate(qh_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nc_p) ) allocate(nc_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(ni_p) ) allocate(ni_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nr_p) ) allocate(nr_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(ns_p) ) allocate(ns_p(ims:ime,kms:kme,jms:jme))
+       if (config_tempo_hailaware) then
           if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nh_p) ) allocate(nh_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(nccn_p) ) allocate(nccn_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(volh_p)) allocate(volh_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(refl10cm_p)  ) allocate(refl10cm_p(ims:ime,kms:kme,jms:jme) )
-          if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
-          
-          if (nssl_moments == "nssl3m") then
-            if(.not.allocated(zrw_p) ) allocate(zrw_p(ims:ime,kms:kme,jms:jme))
-            if(.not.allocated(zgw_p) ) allocate(zgw_p(ims:ime,kms:kme,jms:jme))
-            if(.not.allocated(zhw_p) ) allocate(zhw_p(ims:ime,kms:kme,jms:jme))
-          endif
+       endif
 
->>>>>>> gsl/rrfs
-          case default
-    end select microp2a_select
+       if (config_tempo_ml_for_bl_nc) then
+          if(.not.allocated(cldfrac_p) ) allocate(cldfrac_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(qcbl_p) ) allocate(qcbl_p(ims:ime,kms:kme,jms:jme))
+       endif
+
 
     case default
  end select microp_select
@@ -401,9 +368,9 @@
           if(allocated(refl10cm_p)) deallocate(refl10cm_p)
           if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
 
-            if(allocated(zrw_p) ) deallocate(zrw_p)
-            if(allocated(zgw_p) ) deallocate(zgw_p)
-            if(allocated(zhw_p) ) deallocate(zhw_p)
+          if(allocated(zrw_p) ) deallocate(zrw_p)
+          if(allocated(zgw_p) ) deallocate(zgw_p)
+          if(allocated(zhw_p) ) deallocate(zhw_p)
 
           if(allocated(hailnc_p)  ) deallocate(hailnc_p  )
           if(allocated(hailncv_p) ) deallocate(hailncv_p )
@@ -453,8 +420,6 @@
              if(allocated(nwfa_p)  ) deallocate(nwfa_p  )
           endif
 
-<<<<<<< HEAD
-=======
           if (config_tempo_hailaware) then
              if(allocated(ng_p) ) deallocate(ng_p )
              if(allocated(volg_p) ) deallocate(volg_p )
@@ -465,29 +430,6 @@
              if(allocated(qcbl_p) ) deallocate(qcbl_p)
           endif
 
-        case("mp_nssl2m")
-          if(allocated(qh_p) ) deallocate(qh_p )
-          if(allocated(nc_p) ) deallocate(nc_p )
-          if(allocated(nr_p) ) deallocate(nr_p )
-          if(allocated(ni_p) ) deallocate(ni_p )
-          if(allocated(ns_p) ) deallocate(ns_p )
-          if(allocated(ng_p) ) deallocate(ng_p )
-          if(allocated(nh_p) ) deallocate(nh_p )
-          if(allocated(nccn_p) ) deallocate(nccn_p )
-          if(allocated(volg_p) ) deallocate(volg_p )
-          if(allocated(volh_p) ) deallocate(volh_p )
-          if(allocated(rainprod_p)) deallocate(rainprod_p)
-          if(allocated(evapprod_p)) deallocate(evapprod_p)
-          if(allocated(refl10cm_p)) deallocate(refl10cm_p)
-          if(allocated(refl10cm_1km_p)) deallocate(refl10cm_1km_p)
-
-          if (nssl_moments == "nssl3m") then
-            if(allocated(zrw_p) ) deallocate(zrw_p)
-            if(allocated(zgw_p) ) deallocate(zgw_p)
-            if(allocated(zhw_p) ) deallocate(zhw_p)
-          endif
-
->>>>>>> gsl/rrfs
        case default
     end select microp2a_select
 
@@ -515,19 +457,13 @@
 !local pointer:
  logical,pointer:: do_restart
  character(len=StrKIND),pointer:: microp_scheme
-<<<<<<< HEAD
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
+ logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_refl10cm_from_melting
+ logical,pointer:: config_tempo_ml_for_bl_nc
  logical,pointer:: config_nssl_3moment
  logical,pointer:: config_nssl_hail_on, config_nssl_ccn_on
  real,pointer:: config_nssl_cccn, config_nssl_alphah, config_nssl_alphahl
  real,pointer:: config_nssl_alphar, config_nssl_ehw0, config_nssl_ehlw0
- 
-=======
- logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware, config_tempo_refl10cm_from_melting
- logical,pointer:: config_tempo_ml_for_bl_nc
- character(len=StrKIND),pointer:: nssl_moments
 
->>>>>>> gsl/rrfs
  logical :: outputon = .false.
  integer :: i
 !CCPP-compliant flags:
@@ -545,7 +481,6 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
-<<<<<<< HEAD
  call mpas_pool_get_config(configs,'config_nssl_3moment',config_nssl_3moment)
  call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
  call mpas_pool_get_config(configs,'config_nssl_ccn_on',config_nssl_ccn_on)
@@ -555,11 +490,8 @@
  call mpas_pool_get_config(configs,'config_nssl_alphar',config_nssl_alphar)
  call mpas_pool_get_config(configs,'config_nssl_ehw0',config_nssl_ehw0)
  call mpas_pool_get_config(configs,'config_nssl_ehlw0',config_nssl_ehlw0)
-=======
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
  call mpas_pool_get_config(configs,'config_tempo_refl10cm_from_melting',config_tempo_refl10cm_from_melting)
- call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
->>>>>>> gsl/rrfs
  call mpas_pool_get_config(configs,'config_do_restart'   ,do_restart   )
 
  microp_select: select case(trim(microp_scheme))
@@ -630,21 +562,12 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme
-<<<<<<< HEAD
- logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_nssl_ccn_on
  integer,dimension(:,:),allocatable:: kdbz1km
-=======
- character(len=StrKIND),pointer:: nssl_moments
->>>>>>> gsl/rrfs
 
 !local variables and arrays:
-<<<<<<< HEAD
- integer:: istep, i,j,k
-=======
  integer:: istep
  integer:: i,j,k
->>>>>>> gsl/rrfs
  integer, pointer :: do_diag_dbz
  logical :: do_diag_dbz_flag
 
@@ -662,13 +585,7 @@
  errflg = 0
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
-<<<<<<< HEAD
- call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
- call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
  call mpas_pool_get_config(configs,'config_nssl_ccn_on',config_nssl_ccn_on)
-=======
- call mpas_pool_get_config(configs,'config_nssl_moments',nssl_moments)
->>>>>>> gsl/rrfs
  call mpas_pool_get_array(diag_physics,'do_diag_dbz',do_diag_dbz)
 
  do_diag_dbz_flag = .false.
