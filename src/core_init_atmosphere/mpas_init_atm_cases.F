@@ -7378,18 +7378,22 @@ call mpas_log_write('Done with soil consistency check')
          sorted_arrQ8(:,:) = -999.0
          sorted_arrQ9(:,:) = -999.0
          sorted_arrQ10(:,:) = -999.0
-         scalars(index_nwfa,:,iCell) = 0._RKIND
-         scalars(index_nifa,:,iCell) = 0._RKIND
+         IF ( index_nwfa > 0 ) scalars(index_nwfa,:,iCell) = 0._RKIND
+         IF ( index_nifa > 0 ) scalars(index_nifa,:,iCell) = 0._RKIND
          scalars(index_qc,:,iCell) = 0._RKIND
          scalars(index_qr,:,iCell) = 0._RKIND
          scalars(index_qi,:,iCell) = 0._RKIND
          scalars(index_qs,:,iCell) = 0._RKIND
          scalars(index_qg,:,iCell) = 0._RKIND
-         scalars(index_nc,:,iCell) = 0._RKIND
-         scalars(index_ni,:,iCell) = 0._RKIND
-         scalars(index_nr,:,iCell) = 0._RKIND
-         scalars(index_ns,:,iCell) = 0._RKIND
-         scalars(index_ng,:,iCell) = 0._RKIND
+         IF ( index_nc > 0 ) scalars(index_nc,:,iCell) = 0._RKIND
+         IF ( index_ni > 0 ) scalars(index_ni,:,iCell) = 0._RKIND
+         IF ( index_nr > 0 ) scalars(index_nr,:,iCell) = 0._RKIND
+         IF ( index_ns > 0 ) scalars(index_ns,:,iCell) = 0._RKIND
+         IF ( index_ng > 0 ) scalars(index_ng,:,iCell) = 0._RKIND
+         IF ( index_zgw > 0 ) scalars(index_zgw,:,iCell) = 0._RKIND
+         IF ( index_zrw > 0 ) scalars(index_zrw,:,iCell) = 0._RKIND
+         IF ( index_zhw > 0 ) scalars(index_zhw,:,iCell) = 0._RKIND
+         IF ( index_volg > 0 ) scalars(index_volg,:,iCell) = 0._RKIND
          do k = 1, nfglevels_actual
             sorted_arrQ1(1,k) = z_fg(k,iCell)
             sorted_arrQ2(1,k) = z_fg(k,iCell)
@@ -7642,22 +7646,34 @@ call mpas_log_write('Done with soil consistency check')
 
          end do
 
-! Do not need to do this for initial condition because microphysics handles it on first time step?
+! Do not really need to do this for initial condition because microphysics handles it on first time step?
 ! Just want to get boundary conditions
-!         do k=1,nVertLevels
-!            IF ( scalars(index_qs,k,iCell) > 0.0 ) THEN
-!              ! call function to make ns
-!              IF ( scalars(index_ns,k,iCell) == 0.0 ) THEN
-!                scalars(index_ns,k,iCell) = calcnfromq(qsw=scalars(index_qs,k,iCell),dn=rho_zz(k,iCell) )
-!              ENDIF
-!            ENDIF
-!            IF ( scalars(index_qg,k,iCell) > 0.0 ) THEN
-!              IF ( scalars(index_ng,k,iCell) == 0.0 ) THEN
-!                scalars(index_ng,k,iCell) = calcnfromq(qhw=scalars(index_qg,k,iCell),dn=rho_zz(k,iCell) )
-!              ENDIF
-!              ! call function to make nh
-!            ENDIF
-!         end do
+        do k=1,nVertLevels
+           IF ( index_ns > 0 .and. scalars(index_qs,k,iCell) > 0.0 ) THEN
+             ! call function to make ns
+             IF ( scalars(index_ns,k,iCell) == 0.0 ) THEN
+               scalars(index_ns,k,iCell) = calcnfromq(qsw=scalars(index_qs,k,iCell),dn=rho_zz(k,iCell) )
+             ENDIF
+           ENDIF
+           IF ( index_ng > 0 .and. scalars(index_qg,k,iCell) > 0.0 ) THEN
+             IF ( scalars(index_ng,k,iCell) == 0.0 ) THEN
+               scalars(index_ng,k,iCell) = calcnfromq(qhw=scalars(index_qg,k,iCell),dn=rho_zz(k,iCell) )
+             ENDIF
+             IF ( index_volg > 0 ) THEN
+               IF ( scalars(index_volg,k,iCell) == 0.0 ) THEN
+                 scalars(index_volg,k,iCell) = scalars(index_qg,k,iCell)/700.
+               ENDIF
+             ENDIF
+             IF ( index_zgw > 0 ) THEN
+               scalars(index_zgw,k,iCell) = calczfromnq(qhw=scalars(index_qg,k,iCell),chw=scalars(index_ng,k,iCell),dn=rho_zz(k,iCell) )
+             ENDIF
+             ! call function to make nh
+           ENDIF
+           IF ( index_zrw > 0 .and. scalars(index_qr,k,iCell) > 0.0 &
+                .and. scalars(index_nr,k,iCell) > 0.0 ) THEN
+               scalars(index_zrw,k,iCell) = calczfromnq(qrw=scalars(index_qr,k,iCell),crw=scalars(index_nr,k,iCell),dn=rho_zz(k,iCell) )
+           ENDIF
+        end do
       end do
 
 
@@ -8805,7 +8821,7 @@ call mpas_log_write('Done with soil consistency check')
                     scalars(index_volg,k,iCell) = scalars(index_qg,k,iCell)/700.
                  ENDIF
               ENDIF
-              IF ( index_zgw > 0 ) THEN
+              IF ( index_zgw > 0 .and. scalars(index_qg,k,iCell) > 0.0 ) THEN
                 IF ( scalars(index_zgw,k,iCell) == 0.0 ) THEN
                   scalars(index_zgw,k,iCell) = calczfromnq(qhw=scalars(index_qg,k,iCell),chw=scalars(index_ng,k,iCell),dn=rho_zz(k,iCell) )
                 ENDIF
@@ -8821,7 +8837,7 @@ call mpas_log_write('Done with soil consistency check')
                     scalars(index_volh,k,iCell) = scalars(index_qh,k,iCell)/900.
                  ENDIF
               ENDIF
-              IF ( index_zhw > 0 ) THEN
+              IF ( index_zhw > 0 .and. scalars(index_qh,k,iCell) > 0.0 ) THEN
                 IF ( scalars(index_zhw,k,iCell) == 0.0 ) THEN
                   scalars(index_zhw,k,iCell) = calczfromnq(qhl=scalars(index_qh,k,iCell),chl=scalars(index_nh,k,iCell),dn=rho_zz(k,iCell) )
                 ENDIF
@@ -8833,7 +8849,7 @@ call mpas_log_write('Done with soil consistency check')
                 scalars(index_nr,k,iCell) = calcnfromq(qrw=scalars(index_qr,k,iCell),dn=rho_zz(k,iCell) )
               ENDIF
               IF ( index_zrw > 0 ) THEN
-                IF ( scalars(index_zrw,k,iCell) == 0.0 ) THEN
+                IF ( scalars(index_zrw,k,iCell) == 0.0 .and. scalars(index_nr,k,iCell) == 0.0 ) THEN
                   scalars(index_zrw,k,iCell) = calczfromnq(qrw=scalars(index_qr,k,iCell),crw=scalars(index_nr,k,iCell),dn=rho_zz(k,iCell) )
                 ENDIF
               ENDIF
@@ -11300,7 +11316,7 @@ call mpas_log_write('Done with soil consistency check')
 ! ##############################################################################
 ! ##############################################################################
 !
-!  Subroutine to calculate number concentrations from initial state that has only mixing ratio.
+!  Subroutine to calculate reflectivity moments from initial state that has only mixing ratio.
 !  Output N will be in #/m^3 in 'an' array, since sedimentation is done next.
 !  Output ccw,cci etc. will be in #/kg
 
