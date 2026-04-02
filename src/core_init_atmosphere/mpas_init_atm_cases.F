@@ -4624,14 +4624,13 @@ module init_atm_cases
       call mpas_pool_get_dimension(state, 'index_nr', index_nr)
       call mpas_pool_get_dimension(state, 'index_ns', index_ns)
       call mpas_pool_get_dimension(state, 'index_ng', index_ng)
-<<<<<<< HEAD
       call mpas_pool_get_dimension(state, 'index_nh', index_nh)
       call mpas_pool_get_dimension(state, 'index_zgw', index_zgw)
       call mpas_pool_get_dimension(state, 'index_zhw', index_zhw)
       call mpas_pool_get_dimension(state, 'index_zrw', index_zrw)
       call mpas_pool_get_dimension(state, 'index_volg', index_volg)
       call mpas_pool_get_dimension(state, 'index_volh', index_volh)
-=======
+
 ! Chemistry
       if ( config_smoke_scheme .ne. 'off' ) then
          call mpas_pool_get_dimension(state, 'index_smoke_fine',index_smoke_fine)
@@ -4640,7 +4639,6 @@ module init_atm_cases
          call mpas_pool_get_dimension(state, 'index_dust_fine',index_dust_fine)
          call mpas_pool_get_dimension(state, 'index_dust_coarse',index_dust_coarse)
       endif
->>>>>>> 3ef21dfd
 
       xnutr = 0.
       zd = 12000.
@@ -7444,23 +7442,17 @@ call mpas_log_write('Done with soil consistency check')
          sorted_arrQ8(:,:) = -999.0
          sorted_arrQ9(:,:) = -999.0
          sorted_arrQ10(:,:) = -999.0
-<<<<<<< HEAD
-         IF ( index_nwfa > 0 ) scalars(index_nwfa,:,iCell) = 0._RKIND
-         IF ( index_nifa > 0 ) scalars(index_nifa,:,iCell) = 0._RKIND
-=======
 ! Chemistry
          if (associated(index_smoke_fine  ) ) sorted_arrQ11(:,:) = -999.0
          if (associated(index_dust_fine   ) ) sorted_arrQ12(:,:) = -999.0
          if (associated(index_dust_coarse ) ) sorted_arrQ13(:,:) = -999.0
-         scalars(index_nwfa,:,iCell) = 0._RKIND
-         scalars(index_nifa,:,iCell) = 0._RKIND
->>>>>>> 3ef21dfd
+         IF ( index_nwfa > 0 ) scalars(index_nwfa,:,iCell) = 0._RKIND
+         IF ( index_nifa > 0 ) scalars(index_nifa,:,iCell) = 0._RKIND
          scalars(index_qc,:,iCell) = 0._RKIND
          scalars(index_qr,:,iCell) = 0._RKIND
          scalars(index_qi,:,iCell) = 0._RKIND
          scalars(index_qs,:,iCell) = 0._RKIND
          scalars(index_qg,:,iCell) = 0._RKIND
-<<<<<<< HEAD
          IF ( index_nc > 0 ) scalars(index_nc,:,iCell) = 0._RKIND
          IF ( index_ni > 0 ) scalars(index_ni,:,iCell) = 0._RKIND
          IF ( index_nr > 0 ) scalars(index_nr,:,iCell) = 0._RKIND
@@ -7470,12 +7462,6 @@ call mpas_log_write('Done with soil consistency check')
          IF ( index_zrw > 0 ) scalars(index_zrw,:,iCell) = 0._RKIND
          IF ( index_zhw > 0 ) scalars(index_zhw,:,iCell) = 0._RKIND
          IF ( index_volg > 0 ) scalars(index_volg,:,iCell) = 0._RKIND
-=======
-         scalars(index_nc,:,iCell) = 0._RKIND
-         scalars(index_ni,:,iCell) = 0._RKIND
-         scalars(index_nr,:,iCell) = 0._RKIND
-         scalars(index_ns,:,iCell) = 0._RKIND
-         scalars(index_ng,:,iCell) = 0._RKIND
 ! Chemistry
          if (associated(index_smoke_fine     )) then
             if (index_smoke_fine > 0    ) scalars(index_smoke_fine,:,iCell) = 0._RKIND
@@ -7486,7 +7472,6 @@ call mpas_log_write('Done with soil consistency check')
          if (associated(index_dust_coarse    )) then
              if (index_dust_coarse > 0  ) scalars(index_dust_coarse,:,iCell) = 0._RKIND
          endif
->>>>>>> 3ef21dfd
          do k = 1, nfglevels_actual
             sorted_arrQ1(1,k) = z_fg(k,iCell)
             sorted_arrQ2(1,k) = z_fg(k,iCell)
@@ -8234,14 +8219,13 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_nr', index_nr)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_ns', index_ns)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_ng', index_ng)
-<<<<<<< HEAD
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_nh', index_nh)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_zgw', index_zgw)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_zhw', index_zhw)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_zrw', index_zrw)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_volg', index_volg)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_volh', index_volh)
-=======
+
 ! Chemistry
       if ( config_smoke_scheme .ne. 'off' ) then
          call mpas_pool_get_dimension(lbc_state, 'index_lbc_smoke_fine', index_smoke_fine)
@@ -8250,7 +8234,6 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_pool_get_dimension(lbc_state, 'index_lbc_dust_fine', index_dust_fine)
          call mpas_pool_get_dimension(lbc_state, 'index_lbc_dust_coarse', index_dust_coarse)
       endif
->>>>>>> 3ef21dfd
 
       etavs = (1.0_RKIND - 0.252_RKIND) * pii / 2.0_RKIND
       rcv = rgas / (cp - rgas)
