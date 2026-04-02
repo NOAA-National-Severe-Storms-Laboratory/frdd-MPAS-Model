@@ -475,7 +475,9 @@ module init_atm_cases
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
             call mpas_pool_get_subpool(block_ptr % structs, 'fg', fg)
 
-            call physics_idealized_init(mesh, fg)
+            call mpas_log_write(' calling physics_idealized_init ')
+            call physics_idealized_init(mesh, fg, block_ptr % configs)
+            call mpas_log_write(' returned from physics_idealized_init')
 
             block_ptr => block_ptr % next
          end do
@@ -497,7 +499,7 @@ module init_atm_cases
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
             call mpas_pool_get_subpool(block_ptr % structs, 'fg', fg)
 
-            call physics_idealized_init(mesh, fg)
+            call physics_idealized_init(mesh, fg, block_ptr % configs)
 
             block_ptr => block_ptr % next
          end do
@@ -1511,11 +1513,12 @@ module init_atm_cases
 
       real (kind=RKIND) :: cof1, cof2
       real (kind=RKIND), pointer :: cf1, cf2, cf3
-      real (kind=RKIND) :: um, us, zts, pitop, pibtop, ptopb, ptop, rcp, rcv, p0
+      real (kind=RKIND) :: um, us, zts, pitop, pibtop, ptopb, ptop, rcp, rcv, p0, psfc
       real (kind=RKIND) :: radx, radz, xmid,xmax,xmin, xloc, rad, yloc, ymid, ymax, ymin, a_scale
       real (kind=RKIND) :: pres, temp, es, qvs
 
-      real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
+      real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell, latCell, lonCell
+      real (kind=RKIND), dimension(:), pointer :: latVertex, lonVertex, latEdge, lonEdge
       real (kind=RKIND), dimension(:), pointer :: xEdge, yEdge, zEdge
       real (kind=RKIND), dimension(:), pointer :: xVertex, yVertex, zVertex
       real (kind=RKIND), dimension(:), pointer :: dcEdge, dvEdge, areaCell, areaTriangle
@@ -1523,14 +1526,24 @@ module init_atm_cases
       real (kind=RKIND), pointer :: nominalMinDc
       logical, pointer :: on_a_sphere
       real (kind=RKIND), pointer :: sphere_radius
+      real (kind=RKIND), parameter :: alpha_grid = 0.  ! no grid rotation
+      real (kind=RKIND) :: omega_e
 
       real (kind=RKIND), dimension(:,:), pointer :: t_init, w, rw, v, rho, theta
       real (kind=RKIND), dimension(:), pointer :: u_init, v_init, qv_init, angleEdge, fEdge, fVertex
 
       character (len=StrKIND), pointer :: config_interface_projection, config_input_sounding_name
-      integer, pointer :: config_multi_pert, config_sounding_type, config_read_z_grid
+      integer, pointer :: config_multi_pert, config_sounding_type, config_read_z_grid, config_stretch_z, &
+                          nbndlyr
       logical, pointer :: config_use_sounding_z_levels
-      real,    pointer :: config_xbubloc, config_ybubloc, delt, umv, vmv
+      real,    pointer :: config_xbubloc, config_ybubloc, delt, umv, vmv, dz_bot, dz_top, ztop, &
+                          config_p_surface, config_qv_surface, config_th_surface,               &
+                          config_centlat, config_centlon
+      double precision, dimension(0:nVertLevels + 1) :: gzc, gze
+      real (kind=RKIND) :: tmp1,tmp2
+      integer           :: ke
+
+
 
 ! BEGIN LJW multibubble parameters (should be actually in namelist)
 
@@ -1547,9 +1560,13 @@ module init_atm_cases
       integer           :: ierr
       integer           :: iunit
 
-      real psfc, thsfc, qvsfc, yb
+      real thsfc, qvsfc, yb
       real (kind=RKIND), dimension(nVertLevels) :: tsnd, qvsnd, usnd, vsnd
       logical :: debug = .true.
+
+      real    :: rtop       = 1.0     ! upper level stretch factor
+      real    :: ztopstr    = 100000. ! height to start upper level stretching
+      real    :: dzmaxtop   = 700.    ! max upper level dz
 
 
 ! END LJW multibubble parameters
@@ -1586,6 +1603,13 @@ module init_atm_cases
       call mpas_pool_get_array(mesh, 'areaTriangle', areaTriangle)
       call mpas_pool_get_array(mesh, 'kiteAreasOnVertex', kiteAreasOnVertex)
       call mpas_pool_get_array(mesh, 'nominalMinDc', nominalMinDc)
+      call mpas_pool_get_array(mesh, 'latVertex', latVertex)
+      call mpas_pool_get_array(mesh, 'lonVertex', lonVertex)
+
+      call mpas_pool_get_array(mesh, 'lonCell', lonCell)
+      call mpas_pool_get_array(mesh, 'latCell', latCell)
+      call mpas_pool_get_array(mesh, 'lonEdge', lonEdge)
+      call mpas_pool_get_array(mesh, 'latEdge', latEdge)
 
       call mpas_pool_get_config(mesh, 'on_a_sphere', on_a_sphere)
       call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
@@ -1600,6 +1624,16 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_delt',delt)
       call mpas_pool_get_config(configs, 'config_umv',umv)
       call mpas_pool_get_config(configs, 'config_vmv',vmv)
+      call mpas_pool_get_config(configs, 'config_stretch_z',config_stretch_z)
+      call mpas_pool_get_config(configs, 'config_nbndlyr',nbndlyr)
+      call mpas_pool_get_config(configs, 'config_dz_bot',dz_bot)
+      call mpas_pool_get_config(configs, 'config_dz_top',dz_top)
+      call mpas_pool_get_config(configs, 'config_ztop',ztop)
+      call mpas_pool_get_config(configs, 'config_p_surface',config_p_surface)   ! default val is 100000
+      call mpas_pool_get_config(configs, 'config_qv_surface',config_qv_surface) ! default val is 14.
+      call mpas_pool_get_config(configs, 'config_th_surface',config_th_surface) ! default val is 300.
+      call mpas_pool_get_config(configs, 'config_centlat',config_centlat)
+      call mpas_pool_get_config(configs, 'config_centlon',config_centlon)
       
       multi_pert = config_multi_pert
       bptpert    = delt 
@@ -1610,6 +1644,12 @@ module init_atm_cases
 
       a_scale = 1.0
 
+      latCell(:) = pii/180.*config_centlat
+      lonCell(:) = pii/180.*config_centlon
+      latEdge(:) = pii/180.*config_centlat
+      lonEdge(:) = pii/180.*config_centlon
+      lonVertex(:) = pii/180.*config_centlon
+      latVertex(:) = pii/180.*config_centlat
       xCell(:) = xCell(:) * a_scale
       yCell(:) = yCell(:) * a_scale
       zCell(:) = zCell(:) * a_scale
@@ -1696,6 +1736,7 @@ module init_atm_cases
       zd = 12000.
 
       p0 = 1.e+05
+      psfc = config_p_surface
       rcp = rgas/cp
       rcv = rgas/(cp-rgas)
 
@@ -1718,8 +1759,9 @@ module init_atm_cases
 
 !       parameters for internal hybrid coordinate and vertical stretching
 
+        IF ( config_stretch_z /= 1 ) THEN
         str = 1.0
-        zt = 20000.
+        zt = ztop
         dz = zt/float(nz1)
 
         do k=1,nz
@@ -1748,23 +1790,57 @@ module init_atm_cases
             ah(k) = 1.
 !            call mpas_log_write(' k, zc, zw, ah = $i $r $r $r', intArgs=(/k/), realArgs=(/zc(k),zw(k),ah(k)/))
         end do
+        
+        ELSE ! geometric grid stretch
+
+          dz = ztop/float(nz1)
+
+          CALL ZGRID_sub(dz, dz_bot, nz1, nbndlyr, gzc, gze, 1, dz_top,ztopstr,rtop,dzmaxtop)
+
+           DO k = 1,nz1
+             !write(6,*) 'k,gzc,gze = ',k,gzc(k),gze(k)
+             tmp1 = gzc(k)
+             tmp2 = gze(k)
+             call mpas_log_write(' k, gzc, gze = $i $r $r ', intArgs=(/k/), realArgs=(/tmp1,tmp2/))
+           ENDDO
+
+         gze(0) = -gze(2)
+         ke = nz1
+         gze(ke+1) = gze(ke) + (gze(ke) - gze(ke-1))
+
+         DO k = 1,nz
+           zw(k) = gze(k)
+           zc(k) = gzc(k)
+           ah(k) = 1.
+         ENDDO
+
+        ENDIF
 
       else ! read in from input_grid_z - need to harden this code to check for wrong number of levels
 
           call mpas_new_unit(iunit)
           IF ( .not. config_use_sounding_z_levels ) THEN
             open(unit=iunit, file='input_grid_z', form='formatted', status='old', iostat=ierr)
+            do k=1,nz
+              read(unit=iunit, fmt=*, iostat=ierr) zw(k)
+              ah(k) = 1.
+              call mpas_log_write(' k, zw, ah = $i $r $r ', intArgs=(/k/), realArgs=(/zw(k),ah(k)/))
+            end do
           ELSE
             open(unit=iunit, file=config_input_sounding_name, form='formatted', status='old', iostat=ierr)
             ! dummy read first line
             read(unit=iunit, fmt=*, iostat=ierr) zw(1)
+            zw(1) = 0
+            do k=1,nz-1
+              read(unit=iunit, fmt=*, iostat=ierr) zc(k)
+            end do
+            do k=1,nz-1
+              zw(k+1) = 0.5*(zc(k) + zc(k+1))
+              ah(k) = 1.
+              call mpas_log_write(' k, zw, ah = $i $r $r ', intArgs=(/k/), realArgs=(/zw(k),ah(k)/))
+            end do
           ENDIF
           
-          do k=1,nz
-            read(unit=iunit, fmt=*, iostat=ierr) zw(k)
-            ah(k) = 1.
-            call mpas_log_write(' k, zw, ah = $i $r $r ', intArgs=(/k/), realArgs=(/zw(k),ah(k)/))
-          end do
 
           call mpas_release_unit(iunit)
 
@@ -1864,7 +1940,7 @@ module init_atm_cases
              t (k,i) = thetar*exp(9.8*(ztemp-ztr)/(1003.*ttr))
              relhum(k,i) = 0.25
            else
-             t (k,i) = 300.+43.*(ztemp/ztr)**1.25
+             t (k,i) = config_th_surface+43.*(ztemp/ztr)**1.25
              relhum(k,i) = (1.-0.75*(ztemp/ztr)**1.25)
              if(t(k,i).lt.thetas) t(k,i) = thetas
            end if
@@ -1926,13 +2002,13 @@ module init_atm_cases
             vsnd(k) = vsnd(k) - vmv
          end do
 
-         do i=2, nEdges
+         do i=1, nEdges
             cell1 = cellsOnEdge(1,i)
             cell2 = cellsOnEdge(2,i)
 
             if(cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then
                do k=1,nz1
-                  if (i==2) then
+                  if (i==1) then
                     u_init(k) = usnd(k)
                     v_init(k) = vsnd(k)
                   endif
@@ -1958,8 +2034,8 @@ module init_atm_cases
 
      do itr=1,30
 
-      pitop = 1.-.5*dzw(1)*gravity*(1.+scalars(index_qv,1,1))/(cp*t(1,1)*zz(1,1))
-      pibtop = 1.-.5*dzw(1)*gravity*(1.+qvb(1))/(cp*tb(1,1)*zz(1,1))
+      pitop = (psfc/p0)**rcp-.5*dzw(1)*gravity*(1.+scalars(index_qv,1,1))/(cp*t(1,1)*zz(1,1))
+      pibtop = (psfc/p0)**rcp-.5*dzw(1)*gravity*(1.+qvb(1))/(cp*tb(1,1)*zz(1,1))
       do k=2,nz1
          pitop = pitop-dzu(k)*gravity/(cp*cqw(k,1)*.5*(t(k,1)+t(k-1,1))   &
                                    *.5*(zz(k,1)+zz(k-1,1)))
@@ -2005,7 +2081,7 @@ module init_atm_cases
             temp     = p(k,i)*thi(k,i)
             pres     = p0*p(k,i)**(1./rcp)
             qvs      = 380.*exp(17.27*(temp-273.)/(temp-36.))/pres
-            scalars(index_qv,k,i) = min(0.014_RKIND,relhum(k,i)*qvs)
+            scalars(index_qv,k,i) = min(config_qv_surface*0.001_RKIND,relhum(k,i)*qvs)
           end do
         end do
       
@@ -2202,12 +2278,20 @@ module init_atm_cases
       !
       ! Generate rotated Coriolis field
       !
+      omega_e = omega
+
       do iEdge=1,nEdges
-         fEdge(iEdge) = 0.0
+         fEdge(iEdge) = 0.0 ! 2.0 * omega_e *    &
+                            !           ( -cos(lonEdge(iEdge)) * cos(latEdge(iEdge)) * sin(alpha_grid) + &
+                            !             sin(latEdge(iEdge)) * cos(alpha_grid) &
+                            !           )
       end do
 
       do iVtx=1,nVertices
-         fVertex(iVtx) = 0.0
+         fVertex(iVtx) =  0.0 ! 2.0 * omega_e * &
+                              !           (-cos(lonVertex(iVtx)) * cos(latVertex(iVtx)) * sin(alpha_grid) + &
+                              !            sin(latVertex(iVtx)) * cos(alpha_grid) &
+                              !           )
       end do
 
       !
@@ -10045,12 +10129,13 @@ call mpas_log_write('Done with soil consistency check')
    end function env_qv
 
 
-   subroutine physics_idealized_init(mesh, fg)
+   subroutine physics_idealized_init(mesh, fg, configs)
 
       implicit none
 
       type (mpas_pool_type), intent(inout) :: mesh
       type (mpas_pool_type), intent(inout) :: fg
+      type (mpas_pool_type), intent(in) :: configs
 
       !local variables:
       integer :: iCell, iMonth, iSoil, iCat
@@ -10058,11 +10143,27 @@ call mpas_log_write('Done with soil consistency check')
       integer, dimension(:), pointer :: landmask, lu_index, soilcat_top
       real (kind=RKIND), dimension(:), pointer :: ter, xice, shdmin, shdmax, vegfra, sfc_albbck, xland, seaice
       real (kind=RKIND), dimension(:), pointer :: snow, snowc, snoalb, snowh, skintemp, sst, tmn
+      integer, dimension(:), pointer :: isltyp
       real (kind=RKIND), dimension(:,:), pointer :: tslb, smcrel, sh2o, smois, dzs, albedo12m, greenfrac
       real(kind=RKIND), dimension(:,:), pointer :: landusef, soilf
 
+! soil input
+      INTEGER :: ns_input = 4
+      REAL    :: tmn_input = 288.0, tsk_input = 288.0
+      REAL    :: zs_input(100),tslb_input(100)=288.0000000,smois_input(100)=0.25
+      
+
+      integer, pointer :: lu_input,config_isltyp
+      real, pointer :: config_vegfra
+     ! real :: vegfra = 0.5, canwat = 0.0
+     ! integer :: isltyp = 4
+! default land use is MODIFIED_IGBP_MODIS_NOAH: 17=water; 10 = grassland; 12 = cropland
       !---------------------------------------------------------------------------------------------
 
+      zs_input(1) =  0.05
+      zs_input(2) =  0.25
+      zs_input(3) =  0.70
+      zs_input(4) =  1.50
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nSoilLevels', nSoilLevels)
       call mpas_pool_get_dimension(mesh, 'nMonths', nMonths)
@@ -10081,6 +10182,7 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_array(mesh, 'greenfrac', greenfrac)
       call mpas_pool_get_array(mesh, 'landusef', landusef)
       call mpas_pool_get_array(mesh, 'soilf', soilf)
+      call mpas_pool_get_array(mesh, 'soilcat_top', isltyp)
 
 
       call mpas_pool_get_array(fg, 'xice', xice)
@@ -10100,9 +10202,20 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_array(fg, 'smois', smois)
       call mpas_pool_get_array(fg, 'dzs', dzs)
 
+      call mpas_pool_get_config(configs, 'config_lu_input',lu_input)
+      call mpas_pool_get_config(configs, 'config_vegfra',config_vegfra)
+      call mpas_pool_get_config(configs, 'config_isltyp',config_isltyp)
+      
+!      call mpas_log_write(' lu_input = $i $r $r ', intArgs=(/k/), realArgs=(/tmp1,tmp2/))
+      call mpas_log_write(' lu_input = $i', intArgs=(/lu_input/) )
+      call mpas_log_write(' config_isltyp = $i', intArgs=(/config_isltyp/) )
+      call mpas_log_write(' config_vegfra = $r', realArgs=(/config_vegfra/) )
+      call mpas_log_write(' nSoilLevels = $i', intArgs=(/nSoilLevels/) )
+
       !initialization of surface input variables that are not needed if we run the current set of
       !idealized test cases:
 
+     ! IF ( lu_input == 0 ) lu_input = 10
 
       do iCell = 1, nCells
 
@@ -10110,13 +10223,14 @@ call mpas_log_write('Done with soil consistency check')
          ter(iCell) = 0.0
          xice(iCell) = 0.0
          landmask(iCell) = 0
-         lu_index(iCell) = 0
+         lu_index(iCell) = lu_input
          soilcat_top(iCell) = 0
          shdmin(iCell) = 0.0
          shdmax(iCell) = 0.0
-         vegfra(iCell) = 0.0
+         vegfra(iCell) = config_vegfra
          sfc_albbck(iCell) = 0.0
-         xland(iCell) = 0.0
+         xland(iCell) = 1.0
+         isltyp(iCell) = config_isltyp
          seaice(iCell) = 0.0
          do iCat = 1, nLandCat
              landusef(iCat,iCell) = 0.0
@@ -10139,11 +10253,11 @@ call mpas_log_write('Done with soil consistency check')
          !soil layers:
          tmn(iCell) = 288.0
          do iSoil = 1, nSoilLevels
-            tslb(iSoil,iCell)   = 288.0
+            tslb(iSoil,iCell)   = 288.0 ! tslb_input(iSoil)
             smcrel(iSoil,iCell) =   0.0
             sh2o(iSoil,iCell) =   0.0
-            smois(iSoil,iCell) =   0.0
-            dzs(iSoil,iCell) =   0.0
+            smois(iSoil,iCell) =  0.25 ! smois_input(iSoil)
+            dzs(iSoil,iCell) =  zs_input(iSoil)
          end do
       
          !monthly climatological surface albedo and greenness fraction:
@@ -11723,5 +11837,142 @@ call mpas_log_write('Done with soil consistency check')
     end do
 
     end subroutine rotate_velocities
+
+!-------------------------------------------------------------------------------
+!
+! >>>>>>>>>>>>>>>>>>>>>>>>>>>>   SUBROUTINE ZGRID  <<<<<<<<<<<<<<<<<<<<<<<<<<< !
+!
+!-------------------------------------------------------------------------------
+! Creates the vertical grid using a geometric stretch (LJW)
+!
+! Option - set nbndlyr > 0 input deck.  A suggested value is ~ nz/4 to create a
+! layer having constant resolution near the surface.
+!
+!-------------------------------------------------------------------------------
+
+ SUBROUTINE ZGRID_sub(dz, dz_stretch, nz, nbndlyr, gzc, gze, ng, dzmax,ztopstr,rtop,dzmaxtop)
+
+   implicit none
+
+
+   real(kind=RKIND) ::  dz, dz_stretch
+   real(kind=RKIND) ::  dzmax,ztopstr,rtop,dzmaxtop
+   integer, intent(in) :: nbndlyr, nz, ng
+   double precision gzc(-ng+1:nz+ng), gze(-ng+1:nz+ng)
+
+!   real dzmax
+!   parameter( dzmax = 700. )
+   integer n, k
+   double precision stretch, zx, xmid, fmid, ztop
+   real(kind=RKIND) :: ztop1,tmp1,tmp2
+
+!-----------------------------------------------------------------------------
+! MPI LOCAL VARIABLES
+
+! Use Newton interation to find grid coefficients
+
+   ztop    = dz * (nz-1)
+   zx      = 1.0d0
+   stretch = 1.0d0
+
+   IF( dz .gt. dz_stretch ) THEN
+
+    DO n = 1,50
+
+     IF( abs(zx) .gt. 1.0e-12 ) THEN
+      zx   = zx * 0.5
+      xmid = stretch + zx
+      fmid = ZHEIGHT(dz_stretch,xmid,nz-1,dzmax,nbndlyr,ztopstr,rtop,dzmaxtop) - ztop
+!      write(6,*) 'Stretch: ',n,zx,xmid,fmid,fmid + ztop
+      IF( fmid .le. 0.0 ) stretch = xmid
+      IF ( fmid .eq. 0.0d0 ) EXIT
+     ENDIF
+
+    ENDDO
+
+   ENDIF
+
+   write(6,*)
+   IF( stretch .gt. 1.1 ) THEN
+!    IF ( myid == 0 ) THEN
+    call mpas_log_write('STRETCH FAC TOO BIG! - NUMERICAL ERRORS WILL BE LARGE')
+    tmp1 = stretch
+    call mpas_log_write('STRETCH FAC  =  $r', realArgs=(/tmp1/))
+    call mpas_log_write('INCREASE NZ in namelist or increase dz_bot')
+!    ENDIF
+    stop
+   ELSE
+!    IF ( myid == 0 ) THEN
+    tmp1 = stretch
+    call mpas_log_write('STRETCH FAC  =  $r', realArgs=(/tmp1/))
+    ztop1 = ZHEIGHT(dz_stretch,stretch,nz-1,dzmax,nbndlyr,ztopstr,rtop,dzmaxtop)
+    call mpas_log_write('ZGRID:  DOMAIN  HGT  = $r ',realArgs=(/ztop1/))
+!    ENDIF
+   ENDIF
+
+   gze(1) = 0.0
+   DO k = 1,nz-1
+    gze(k+1) = ZHEIGHT(dz_stretch,stretch,k,dzmax,nbndlyr,ztopstr,rtop,dzmaxtop)
+    gzc(k)   = 0.5 * ( gze(k) + gze(k+1) )
+!    write(6,*) 'ZGRID: gze,gzc = ',k,gze(k+1),gzc(k)
+   ENDDO
+
+   gzc(nz) = 2.*gzc(nz-1) - gzc(nz-2)
+
+
+  END SUBROUTINE ZGRID_sub
+
+!--------------------------------------------------------------------------
+! FUNCTION ZHEIGHT:  Computes the height of a geometrically stretched grid
+!                    with a few wrinkles:  It can have a layer of constant
+!                    dz at the bottom 'n1' layers thick, it also limits
+!                    the size of dz at the top of the model to be 'dzmax'.
+
+ REAL FUNCTION ZHEIGHT(dzbot,r,nz,dzmax,n1,zctop,ztopr,dzmax2)
+
+  implicit none
+  integer nz, n1, k, k2
+  integer n2
+  real dzbot
+  double precision r
+  double precision sum
+  double precision dznew, dzmaxdp, dzmax2dp
+  real dzmax
+  real zctop  ! height for upper level stretch
+  real ztopr  ! upper level stretch factor
+  real dzmax2 ! maximum upper dz
+  real dzm
+
+  sum = 0.0d0
+  dzmaxdp = dzmax
+  dzmax2dp = dzmax2
+
+!  zctop = 10000.
+!  ztopr = 1.09
+!  dzmax2 = 1000. ! 2*dzmax
+
+  n2 = 0
+
+  DO k = 1,nz
+
+   IF( k .le. n1 ) THEN
+    dznew=dzbot
+   ELSE
+    k2=k-n1
+    dznew = Min(dzbot * r**(k2-1),dzmaxdp)
+      IF ( sum .ge. zctop ) THEN
+       IF ( n2 .eq. 0 ) dzm = Min(dznew,dzmaxdp)
+       n2 = n2 + 1
+       dznew = Min(dzm * ztopr**n2, dzmax2)
+      ENDIF
+   ENDIF
+   sum = sum + dznew
+
+  ENDDO
+
+  ZHEIGHT = sum
+
+ RETURN
+ END FUNCTION ZHEIGHT
 
 end module init_atm_cases
