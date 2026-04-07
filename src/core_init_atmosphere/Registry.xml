@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
+<<<<<<< HEAD
 <registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.3.0-1.9">
+=======
+<registry model="mpas" core="init_atmosphere" core_abbrev="init_atm" version="8.3.1-noaa">
+>>>>>>> tedsrepo/gsl-v8.3.1-2.15_merge_nssl3m
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Dimensions ************************************** -->
@@ -44,12 +48,11 @@
                      description="The number of prescribed pressure levels in the climatological GOCART data set"/>
                 <dim name="nMonths" definition="namelist:config_months"
                      description="The number of months in a year"/>
-                     description="The number of soil categories used in the land surface model"/>
-		<dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
+                <dim name="nlcat" definition="namelist:config_landuse_data" calculation='20 + 4 * merge(1,0,config_landuse_data(1:4)=="USGS")'
                      description="The number of landuse categories used in the land surface model"/>
                 <dim name="nscat" definition="16" definition:"namelist:config_nsoilcat"
                      description="The number of soil categories used in the land surface model"/>
-	        <dim name="nVegOpt" definition="namelist:config_nvegopt"
+                <dim name="nVegOpt" definition="namelist:config_nvegopt"
                      description="The number of vegetation fraction option: 1 - clim, 2 - real-time"/>
         </dims>
 
@@ -111,6 +114,57 @@
                      units="-"
                      description="projecting layer values to the interface, linear vertical interpolation or integral"
                      possible_values="'linear_interpolation' or 'layer_integral' (layer average value)"/>
+
+                <nml_option name="config_sounding_type" type="integer" default_value="1" in_defaults="false"
+                     units="-"
+                     description="Sounding option: 1=internal, 2=read in external (for cases 4 and 5 only)"
+                     possible_values="1 or 2"/>
+
+                <nml_option name="config_input_sounding_name"  type="character"     default_value="input_sounding"
+                     units="-"
+                     description="filename for input sounding (cases 4 and 5 only)"
+                     possible_values="string"/>
+
+                <nml_option name="config_multi_pert" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="Number of bubbles is 2*n+1 (for cases 4 and 5 only)"
+                     possible_values="Integer value of 0 or more"/>
+
+                <nml_option name="config_read_z_grid" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="0 for internal z levels, 1 to read in input_grid_z (for cases 4 and 5 only)"
+                     possible_values="Integer value of 0 or 1"/>
+
+                <nml_option name="config_use_sounding_z_levels" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="true to read z levels from sounding file (for cases 4 and 5 only)"
+                     possible_values="true or false"/>
+
+                <nml_option name="config_xbubloc" type="real" default_value="0.5"
+                     units="-"
+                     description="factor in location of single thermal bubble as in xcent = xbubloc*(xmax-xmin)"
+                     possible_values="0 $\leq$ config_xbubloc $\leq$ 1"/>
+
+                <nml_option name="config_ybubloc" type="real" default_value="0.5"
+                     units="-"
+                     description="factor in location of single thermal bubble as in ycent = ybubloc*(ymax-ymin)"
+                     possible_values="0 $\leq$ config_ybubloc $\leq$ 1"/>
+
+                <nml_option name="config_delt" type="real" default_value="3.0"
+                     units="-"
+                     description="delta-t for thermal bubble"
+                     possible_values="real number"/>
+
+                <nml_option name="config_umv" type="real" default_value="0.0"
+                     units="-"
+                     description="grid motion in U direction"
+                     possible_values="real number"/>
+
+                <nml_option name="config_vmv" type="real" default_value="0.0"
+                     units="-"
+                     description="grid motion in V direction"
+                     possible_values="real number"/>
+
 
         </nml_record>
 
@@ -326,11 +380,6 @@
                      description="Whether to interpolate first-guess fields from intermediate file"
                      possible_values="true or false"/>
 
-		<nml_option name="config_aerosol_climo"            type="logical"       default_value="false"
-                     units="-"
-                     description="Whether to use monthly climatology for water- and ice-friendly aerosols"
-                     possible_values="true or false"/>
-
 		<nml_option name="config_tempo_rap"            type="logical"       default_value="false"
                      units="-"
                      description="Whether to use aerosols from RAP for TEMPO microphysics instead of the monthly climatology"
@@ -413,9 +462,8 @@
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
                 <package name="first_guess_field" description="3-d atmospheric or land-surface fields on first-guess levels"/>
                 <package name="mp_thompson_aers_in" description="initialization of GOCART-based Thompson water- and ice-friendly aerosols"/>
-		<package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
-		<package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
-		<package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
+                <package name="mp_tempo_in" description="parameterization of TEMPO cloud microphysics."/>
+                <package name="tempo_aerosolaware_in" description="variables for TEMPO aerosol-aware microphysics."/>
                 <package name="noahmp" description="Whether to process, read, and write static fields only required by Noah-MP"/>
         </packages>
 
@@ -1234,7 +1282,7 @@
                              description="Graupel mixing ratio"/>
 
                         <var name="qh" array_group="moist" units="kg kg^{-1}"
-                             description="hail mixing ratio"/>
+                             description="Hail mixing ratio"/>
 
                         <var name="ni" array_group="number" units="nb kg^{-1}"
                              description="Cloud ice number concentration"/>
@@ -1251,6 +1299,24 @@
                         <var name="ng" array_group="number" units="nb kg^{-1}"
                              description="Graupel number concentration"/>
 
+                        <var name="nh" array_group="number" units="nb kg^{-1}"
+                             description="Hail number concentration"/>
+
+                        <var name="volg" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Graupel particle volume"/>
+
+                        <var name="volh" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Hail particle volume"/>
+
+                        <var name="zrw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Rain reflectivity moment"/>
+
+                        <var name="zgw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Graupel reflectivity moment"/>
+
+                        <var name="zhw" array_group="reflectivity" units="nb kg^{-1}"
+                             description="Hail reflectivity moment"/>
+
                         <var name="nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
@@ -1258,6 +1324,7 @@
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Gocart water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+
                 </var_array>
 
                 <!-- Climatology for ocean mixed-layer depth -->
@@ -1302,7 +1369,7 @@
                         <var name="lbc_qg" array_group="moist" units="kg kg^{-1}"
                              description="Lateral boundary tendency of graupel mixing ratio"/>
 
-                       <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
+                        <var name="lbc_qh" array_group="moist"  units="kg kg^{-1} s^{-1}"
                              description="Lateral boundary tendency of hail mixing ratio"/>
 
                         <var name="lbc_nr" array_group="number" units="kg^{-1}"
@@ -1331,6 +1398,15 @@
 
                         <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of hail particle volume"/>
+
+                        <var name="lbc_zgw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of graupel reflectivity"/>
+
+                        <var name="lbc_zhw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of hail reflectivity"/>
+
+                        <var name="lbc_zrw" array_group="reflectivity" units="m^6 m^{-3} s^{-1}"
+                             description="Lateral boundary tendency of rain reflectivity"/>
 
                         <var name="lbc_nifa" array_group="number" units="nb kg^{-1}"
                              description="Gocart ice-friendly aerosol number concentration on lateral boundary cells"
@@ -1374,11 +1450,11 @@
                      description="First guess specific humidity"
                      packages="first_guess_field"/>
 
-	        <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		     description="First guess water-friendly aerosols"/>
+	           <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+		           description="First guess water-friendly aerosols"/>
 
-		<var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
-		     description="First guess ice-friendly aerosols"/>
+		      <var name="qnifa_fg" name_in_code="qnifa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
+		           description="First guess ice-friendly aerosols"/>
 
                 <var name="qc_fg" name_in_code="qc" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
                      description="First guess cloud mixing ratio"/>
@@ -1649,5 +1725,7 @@
                      description="10 cm radar reflectivity"
                      packages="met_stage_out"/>
 </var_struct>
+
+#include "registry.chemistry.xml"
 
 </registry>

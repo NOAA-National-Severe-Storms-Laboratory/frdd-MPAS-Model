@@ -327,7 +327,7 @@ module mpas_convective_diagnostics
 
         real (kind=RKIND), allocatable, dimension(:,:) :: updraft_helicity, smooth_helicity
         real (kind=RKIND), allocatable, dimension(:,:) :: updraft_helicity_neg, smooth_helicity_neg
-        real (kind=RKIND), allocatable, dimension(:,:) :: wspd
+        real (kind=RKIND), allocatable, dimension(:)   :: wspd
         real (kind=RKIND), allocatable, dimension(:) :: z_agl, pres
         real (kind=RKIND), dimension(:,:), pointer :: kiteAreasOnVertex, vorticity, w, zgrid
         real (kind=RKIND), dimension(:), pointer :: areaCell, updraft_helicity_max, w_velocity_max
@@ -470,31 +470,31 @@ module mpas_convective_diagnostics
                 enddo
             endif
 
-            if (is_needed_u10m_mean) then
+            if (is_needed_u10m_mean .and. associated(u10m) ) then
                 do iCell=1,nCellsSolve
                   u10m_mean(iCell) = u10m_mean(iCell) + u10m(iCell) * (1.0_RKIND/real(nsteps))
                 enddo
             endif
 
-            if (is_needed_v10m_mean) then
+            if (is_needed_v10m_mean .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   v10m_mean(iCell) = v10m_mean(iCell) + v10m(iCell) * (1.0_RKIND/real(nsteps))
                 enddo
             endif
 
-            if (is_needed_ws10m_mean) then
+            if (is_needed_ws10m_mean .and. associated(u10m) .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   wind_speed_10m_mean(iCell) = wind_speed_10m_mean(iCell) + sqrt(u10m(iCell)**2+v10m(iCell)**2) *(1.0_RKIND/real(nsteps))
                 enddo
             endif
 
             if (is_needed_wind02_max) then
-                allocate(wspd(nVertLevels,nCells))
+                allocate(wspd(nVertLevels))
                 do iCell=1, nCellsSolve
                   z_agl(1:nVertLevels) = 0.5*(zgrid(1:nVertLevels,iCell)+zgrid(2:nVertlevelsP1,iCell)) - zgrid(1,iCell)
                   if (column_height_value(refl10cm(:,iCell),z_agl(1:nVertLevels),1000.0_RKIND,nVertLevels) > 20.0_RKIND) then
                     do k=1,nVertLevels
-                      wspd(k,iCell) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
+                      wspd(k) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
                     end do
                     wind02_max(iCell) = max(wind02_max(iCell), col_depth_max(wspd , z_agl, 0.0_RKIND, 2000.0_RKIND, nVertLevels ))
                   endif
@@ -513,7 +513,7 @@ module mpas_convective_diagnostics
                 enddo
             endif
 
-            if (is_needed_ws10m_max) then
+            if (is_needed_ws10m_max .and. associated(u10m) .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   wind_speed_10m_max(iCell) = max(wind_speed_10m_max(iCell), sqrt(u10m(iCell)**2+v10m(iCell)**2))
                 enddo

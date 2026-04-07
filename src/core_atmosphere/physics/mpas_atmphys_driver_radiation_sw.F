@@ -505,7 +505,7 @@
 
     case("rrtmg_sw")
        microp_select: select case(microp_scheme)
-          case("mp_thompson","mp_thompson_aerosols","mp_wsm6")
+          case("mp_thompson","mp_thompson_aerosols","mp_wsm6","mp_nssl2m")
              if(config_microp_re) then
                 call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
                 call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
@@ -536,7 +536,7 @@
                 enddo
              endif
 
-          case("mp_nssl2m","mp_tempo")
+          case("mp_tempo")
              if(config_microp_re) then
                 call mpas_pool_get_array(diag_physics,'re_cloud',re_cloud)
                 call mpas_pool_get_array(diag_physics,'re_ice'  ,re_ice  )
@@ -1023,6 +1023,7 @@
               swdnt      = swdnt_p       , swdntc   = swdntc_p    , swupb      = swupb_p      , &
               swupbc     = swupbc_p      , swdnb    = swdnb_p     , swdnbc     = swdnbc_p     , &
               swddir     = swddir_p      , swddni   = swddni_p    , swddif     = swddif_p     , &
+              julian     = curr_julday   ,                                                      &
               ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde ,           &
               ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,           &
               its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte             &

@@ -106,7 +106,8 @@
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
                                   config_sfclayer_scheme
-
+ integer,pointer:: config_mynn_cloudpdf
+ logical,pointer:: config_tempo_cldfra
 !-----------------------------------------------------------------------------------------------------------------
 !call mpas_log_write('')
 !call mpas_log_write('--- enter subroutine physics_namelist_check:')
@@ -121,6 +122,8 @@
  call mpas_pool_get_config(configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
+ call mpas_pool_get_config(configs,'config_tempo_cldfra'     ,config_tempo_cldfra     )
+ call mpas_pool_get_config(configs,'config_mynn_cloudpdf'    ,config_mynn_cloudpdf    )
 
  call mpas_log_write('')
  call mpas_log_write('----- Setting up physics suite '''//trim(config_physics_suite)//''' -----')
@@ -189,8 +192,8 @@
            config_microp_scheme .eq. 'mp_kessler'           .or. &
            config_microp_scheme .eq. 'mp_thompson'          .or. &
            config_microp_scheme .eq. 'mp_thompson_aerosols' .or. &
-           config_microp_scheme .eq. 'mp_tempo' .or. &
-           config_microp_scheme .eq. 'mp_nssl2m'  .or. &
+           config_microp_scheme .eq. 'mp_tempo'             .or. &
+           config_microp_scheme .eq. 'mp_nssl2m'            .or. &
            config_microp_scheme .eq. 'mp_wsm6')) then
 
     write(mpas_err_message,'(A,A20)') 'illegal value for config_microp_scheme:', &
@@ -294,6 +297,19 @@
 
  endif
 
+ if ((config_microp_scheme .eq. 'mp_tempo') .and. (config_tempo_cldfra)) then
+    write(mpas_err_message,'(A,A20)') &
+      '     setting cloud fraction to config_radt_cld_scheme = cld_tempo'
+    call physics_message(mpas_err_message)
+    config_radt_cld_scheme = "cld_tempo"
+    if ((config_pbl_scheme == 'bl_mynn') .and. (config_mynn_cloudpdf .ge. 0)) then
+       write(mpas_err_message,'(A,A20)') &
+       '     setting config_mynn_cloudpdf to -2 when using tempo prognostic clouds'
+       call physics_message(mpas_err_message)
+       config_mynn_cloudpdf = -2
+    endif
+ endif
+      
 !surface-layer scheme:
  if(.not. (config_sfclayer_scheme .eq. 'off'     .or. &
            config_sfclayer_scheme .eq. 'sf_mynn' .or. &
@@ -446,7 +462,6 @@
 
 !local variables:
  character(len=StrKIND),pointer:: config_microp_scheme
- logical,pointer:: config_tempo_hailaware
  logical:: l_qr_acr_qg,l_qr_acr_qs,l_qi_aut_qs,l_freezeH2O
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -457,36 +472,7 @@
 
     call mpas_pool_get_config(configs,'config_microp_scheme',config_microp_scheme)
     if(config_microp_scheme /= "mp_thompson" .or. &
-       config_microp_scheme /= "mp_tempo" .or. &
        config_microp_scheme /= "mp_thompson_aerosols") return
-
-    if (config_microp_scheme == "mp_tempo") then
-       l_qr_acr_qg = .false.
-       l_qr_acr_qs = .false.
-       l_qi_aut_qs = .false.
-       l_freezeH2O = .false.
-
-       ! hailaware scheme needs hailaware table, non hailaware scheme can use either table
-       call mpas_pool_get_config(configs,'config_tempo_hailaware',config_tempo_hailaware)
-       if (config_tempo_hailaware) then
-          inquire(file='MP_TEMPO_HAILAWARE_QRacrQG_DATA.DBL'  ,exist=l_qr_acr_qg)
-       else
-          inquire(file='MP_TEMPO_HAILAWARE_QRacrQG_DATA.DBL'  ,exist=l_qr_acr_qg)
-          if (.not. l_qr_acr_qg) then
-             inquire(file='MP_TEMPO_QRacrQG_DATA.DBL'  ,exist=l_qr_acr_qg)
-          endif
-       endif
-       inquire(file='MP_TEMPO_QRacrQS_DATA.DBL'  ,exist=l_qr_acr_qs)
-       inquire(file='MP_TEMPO_QIautQS_DATA.DBL'  ,exist=l_qi_aut_qs)
-       inquire(file='MP_TEMPO_freezeH2O_DATA.DBL',exist=l_freezeH2O)
-
-       if(.not. (l_qr_acr_qg .and. l_qr_acr_qs .and. l_qi_aut_qs .and. l_freezeH2O)) then
-          write(mpas_err_message,'(A)') &
-               '--- tables to run the TEMPO cloud microphysics do not exist: run build_tables_tempo first.'
-          call physics_error_fatal(mpas_err_message)
-       endif
-       !   call mpas_log_write('l_mp_tables = $l',logicArgs=(/l_mp_tables/))
-    else
 
     l_qr_acr_qg = .false.
     l_qr_acr_qs = .false.
@@ -511,7 +497,6 @@
        call physics_error_fatal(mpas_err_message)
     endif
 !   call mpas_log_write('l_mp_tables = $l',logicArgs=(/l_mp_tables/))
-    endif
 
  endif
 

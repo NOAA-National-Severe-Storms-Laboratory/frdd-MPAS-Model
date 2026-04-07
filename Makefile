@@ -335,6 +335,33 @@ ifort:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
 	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
 	"CFLAGS_OPT = -O3" \
 	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" -L$(NETCDF_C_ROOT)/lib \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
+ifort_icx:   # BUILDTARGET Intel Fortran, C, and C++ compiler suite
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc" \
+	"CXX_PARALLEL = mpicxx" \
+	"FC_SERIAL = ifort" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"FFLAGS_DEBUG = -g -convert big_endian -free -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
@@ -456,6 +483,33 @@ intel-mpi:   # BUILDTARGET Intel compiler suite with Intel MPI library
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
 
+intel-llvm-mpi:   # BUILDTARGET Intel LLVM compiler suite with Intel MPI library
+	( $(MAKE) all \
+	"FC_PARALLEL = mpiifx" \
+	"CC_PARALLEL = mpiicx" \
+	"CXX_PARALLEL = mpiicpx" \
+	"FC_SERIAL = ifx" \
+	"CC_SERIAL = icx" \
+	"CXX_SERIAL = icpx" \
+	"FFLAGS_PROMOTION = -real-size 64" \
+	"FFLAGS_OPT = -O3 -convert big_endian -free -align array64byte" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"CXXFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
+	"PICFLAG = -fpic" \
+	"BUILD_TARGET = $(@)" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
+
 intel-mpi-ursa:   # usra
 	( $(MAKE) all \
 	"FC_PARALLEL = mpiifort" \
@@ -472,7 +526,7 @@ intel-mpi-ursa:   # usra
 	"FFLAGS_DEBUG = -g -convert big_endian -free -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
-	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -qopenmp" \
 	"PICFLAG = -fpic" \
@@ -864,6 +918,10 @@ endif
 	LIBS += $(NCLIB)
 endif
 
+ifneq "$(HDF5)" ""
+        LIBS += -L$(HDF5)/lib
+        LIBS += -lhdf5_hl -lhdf5 -lm -lz
+endif
 
 ifneq "$(PNETCDF)" ""
 ifneq ($(wildcard $(PNETCDF)/lib/libpnetcdf.*), )
