@@ -7513,9 +7513,15 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arrQ9(2,k) = max(0._RKIND,qnwfa_fg(k,iCell))
             sorted_arrQ10(2,k) = max(0._RKIND,qnifa_fg(k,iCell))
 ! Chemistry
-            if (associated(smoke_fine_fg  ) ) sorted_arrQ11(2,k) = max(0._RKIND,smoke_fine_fg(k,iCell))
-            if (associated(dust_fine_fg   ) ) sorted_arrQ12(2,k) = max(0._RKIND,dust_fine_fg(k,iCell))
-            if (associated(dust_coarse_fg ) ) sorted_arrQ13(2,k) = max(0._RKIND,dust_coarse_fg(k,iCell))
+!             if (associated(smoke_fine_fg  ) .and. associated(index_smoke_fine )) then
+!               if ( index_smoke_fine > 0 ) sorted_arrQ11(2,k) = max(0._RKIND,smoke_fine_fg(k,iCell))
+!             endif
+!             if (associated(dust_fine_fg   ) .and. associated(index_dust_fine ) ) then
+!              if ( index_dust_fine > 0 ) sorted_arrQ12(2,k) = max(0._RKIND,dust_fine_fg(k,iCell))
+!             endif
+!             if (associated(dust_coarse_fg ) .and. associated(index_dust_coarse ) ) then 
+!               if ( index_dust_coarse > 0 ) sorted_arrQ13(2,k) = max(0._RKIND,dust_coarse_fg(k,iCell))
+!             endif
          end do
 
          call mpas_quicksort(nfglevels_actual, sorted_arrQ1)
@@ -7529,9 +7535,15 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_quicksort(nfglevels_actual, sorted_arrQ9)
          call mpas_quicksort(nfglevels_actual, sorted_arrQ10)
 ! Chemistry
-         if (associated(index_smoke_fine   ) )  call mpas_quicksort(nfglevels_actual, sorted_arrQ11)
-         if (associated(index_dust_fine    ) )  call mpas_quicksort(nfglevels_actual, sorted_arrQ12)
-         if (associated(index_dust_coarse  ) )  call mpas_quicksort(nfglevels_actual, sorted_arrQ13)
+         if (associated(index_smoke_fine   ) .and. associated(index_smoke_fine )) then
+              if ( index_smoke_fine > 0 )   call mpas_quicksort(nfglevels_actual, sorted_arrQ11)
+         endif
+         if (associated(dust_fine_fg   ) .and. associated(index_dust_fine ) ) then
+             if ( index_dust_fine > 0 )  call mpas_quicksort(nfglevels_actual, sorted_arrQ12)
+         endif
+         if (associated(dust_coarse_fg ) .and. associated(index_dust_coarse ) ) then 
+              if ( index_dust_coarse > 0 ) call mpas_quicksort(nfglevels_actual, sorted_arrQ13)
+         endif
 
          do k = nVertLevels, 1, -1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
@@ -8848,9 +8860,9 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arrQ9(2,k) = max(0._RKIND,qnwfa_fg(k,iCell))
             sorted_arrQ10(2,k) = max(0._RKIND,qnifa_fg(k,iCell))
 ! Chemistry
-            if (associated(smoke_fine_fg  ))sorted_arrq11(2,k) = max(0._rkind,smoke_fine_fg(k,icell))
-            if (associated(dust_fine_fg   ))sorted_arrq12(2,k) = max(0._rkind,dust_fine_fg(k,icell))
-            if (associated(dust_coarse_fg ))sorted_arrq13(2,k) = max(0._rkind,dust_coarse_fg(k,icell))
+    !        if (associated(smoke_fine_fg  ))sorted_arrq11(2,k) = max(0._rkind,smoke_fine_fg(k,icell))
+    !        if (associated(dust_fine_fg   ))sorted_arrq12(2,k) = max(0._rkind,dust_fine_fg(k,icell))
+    !        if (associated(dust_coarse_fg ))sorted_arrq13(2,k) = max(0._rkind,dust_coarse_fg(k,icell))
          end do
 
          call mpas_quicksort(nfglevels_actual, sorted_arrQ1)
