@@ -45,10 +45,12 @@ module mpas_convective_diagnostics
     logical :: is_needed_updraft_helicity05_15_min
     logical :: is_needed_updraft_helicity_02_min
     logical :: is_needed_updraft_helicity_03_min
+    logical :: is_needed_vorticity_max_02
     logical :: is_needed_w_max
     logical :: is_needed_w_min
     logical :: is_needed_w_mean
     logical :: is_needed_ws10m_max
+    logical :: is_needed_ws80m_max
     logical :: is_needed_ws10m_mean
     logical :: is_needed_u10m_mean
     logical :: is_needed_v10m_mean
@@ -108,10 +110,12 @@ module mpas_convective_diagnostics
         is_needed_updraft_helicity05_15_min = .false.
         is_needed_updraft_helicity_02_min = .false.
         is_needed_updraft_helicity_03_min = .false.
+        is_needed_vorticity_max_02 = .false.
         is_needed_w_max = .false.
         is_needed_w_min = .false.
         is_needed_w_mean  = .false.
         is_needed_ws10m_max = .false.
+        is_needed_ws80m_max = .false.
         is_needed_ws10m_mean = .false.
         is_needed_u10m_mean = .false.
         is_needed_v10m_mean = .false.
@@ -211,6 +215,13 @@ module mpas_convective_diagnostics
         do_any_uh = do_any_uh .or. is_needed_updraft_helicity_03_min
         do_any_diags = do_any_diags .or. do_any_uh
 
+        ! - 0-2km Vertical Vorticity (BCM - CIWRO/NSSL 13 APR 26)
+        if (mpas_stream_inclusion_count('vorticity_max_02', direction=MPAS_STREAM_OUTPUT) > 0) then
+            is_needed_vorticity_max_02 = .true.
+        end if
+        do_any_uh = do_any_uh .or. is_needed_vorticity_max_02
+        do_any_diags = do_any_diags .or. is_needed_vorticity_max_02
+
         ! - Vertical Velocity
         if (mpas_stream_inclusion_count('w_velocity_max', direction=MPAS_STREAM_OUTPUT) > 0) then
             is_needed_w_max = .true.
@@ -246,6 +257,11 @@ module mpas_convective_diagnostics
         ! - Horizontal wind speed
         if (mpas_stream_inclusion_count('wind_speed_10m_max', direction=MPAS_STREAM_OUTPUT) > 0) then
             is_needed_ws10m_max = .true.
+        end if
+        do_any_diags = do_any_diags .or. is_needed_ws10m_max
+
+        if (mpas_stream_inclusion_count('wind_speed_80m_max', direction=MPAS_STREAM_OUTPUT) > 0) then
+            is_needed_ws80m_max = .true.
         end if
         do_any_diags = do_any_diags .or. is_needed_ws10m_max
 
@@ -327,7 +343,7 @@ module mpas_convective_diagnostics
 
         real (kind=RKIND), allocatable, dimension(:,:) :: updraft_helicity, smooth_helicity
         real (kind=RKIND), allocatable, dimension(:,:) :: updraft_helicity_neg, smooth_helicity_neg
-        real (kind=RKIND), allocatable, dimension(:,:) :: wspd
+        real (kind=RKIND), allocatable, dimension(:)   :: wspd
         real (kind=RKIND), allocatable, dimension(:) :: z_agl, pres
         real (kind=RKIND), dimension(:,:), pointer :: kiteAreasOnVertex, vorticity, w, zgrid
         real (kind=RKIND), dimension(:), pointer :: areaCell, updraft_helicity_max, w_velocity_max
@@ -335,6 +351,7 @@ module mpas_convective_diagnostics
         real (kind=RKIND), dimension(:), pointer :: w_velocity_mean
         real (kind=RKIND), dimension(:), pointer :: wind02_max, wind02_integral_max
         real (kind=RKIND), dimension(:), pointer :: wind_speed_10m_max
+        real (kind=RKIND), dimension(:), pointer :: wind_speed_80m_max
         real (kind=RKIND), dimension(:), pointer :: wind_speed_10m_mean
         real (kind=RKIND), dimension(:), pointer :: u10m_mean, v10m_mean
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_max_01
@@ -350,6 +367,7 @@ module mpas_convective_diagnostics
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_min05_15
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_min_02
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_min_03
+        real (kind=RKIND), dimension(:), pointer :: vorticity_max_02
         real (kind=RKIND), dimension(:,:), pointer :: uzonal, umeridional
         real (kind=RKIND), dimension(:,:), pointer :: pressure_base, pressure_p
         real (kind=RKIND), dimension(:), pointer :: u10m, v10m, t2m
@@ -408,12 +426,14 @@ module mpas_convective_diagnostics
             call mpas_pool_get_array(diag, 'updraft_helicity_min05_15',updraft_helicity_min05_15)
             call mpas_pool_get_array(diag, 'updraft_helicity_min_02', updraft_helicity_min_02)
             call mpas_pool_get_array(diag, 'updraft_helicity_min_03', updraft_helicity_min_03)
+            call mpas_pool_get_array(diag, 'vorticity_max_02', vorticity_max_02)
             call mpas_pool_get_array(diag, 'w_velocity_max', w_velocity_max)
             call mpas_pool_get_array(diag, 'w_velocity_min', w_velocity_min)
             call mpas_pool_get_array(diag, 'w_velocity_mean', w_velocity_mean)
             call mpas_pool_get_array(diag, 'wind02_max',wind02_max)
             call mpas_pool_get_array(diag, 'wind02_integral_max', wind02_integral_max)
             call mpas_pool_get_array(diag, 'wind_speed_10m_max', wind_speed_10m_max)
+            call mpas_pool_get_array(diag, 'wind_speed_80m_max', wind_speed_80m_max)
             call mpas_pool_get_array(diag, 'wind_speed_10m_mean', wind_speed_10m_mean)
             call mpas_pool_get_array(diag, 'u10m_mean', u10m_mean)
             call mpas_pool_get_array(diag, 'v10m_mean', v10m_mean)
@@ -470,31 +490,31 @@ module mpas_convective_diagnostics
                 enddo
             endif
 
-            if (is_needed_u10m_mean) then
+            if (is_needed_u10m_mean .and. associated(u10m) ) then
                 do iCell=1,nCellsSolve
                   u10m_mean(iCell) = u10m_mean(iCell) + u10m(iCell) * (1.0_RKIND/real(nsteps))
                 enddo
             endif
 
-            if (is_needed_v10m_mean) then
+            if (is_needed_v10m_mean .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   v10m_mean(iCell) = v10m_mean(iCell) + v10m(iCell) * (1.0_RKIND/real(nsteps))
                 enddo
             endif
 
-            if (is_needed_ws10m_mean) then
+            if (is_needed_ws10m_mean .and. associated(u10m) .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   wind_speed_10m_mean(iCell) = wind_speed_10m_mean(iCell) + sqrt(u10m(iCell)**2+v10m(iCell)**2) *(1.0_RKIND/real(nsteps))
                 enddo
             endif
 
             if (is_needed_wind02_max) then
-                allocate(wspd(nVertLevels,nCells))
+                allocate(wspd(nVertLevels))
                 do iCell=1, nCellsSolve
                   z_agl(1:nVertLevels) = 0.5*(zgrid(1:nVertLevels,iCell)+zgrid(2:nVertlevelsP1,iCell)) - zgrid(1,iCell)
                   if (column_height_value(refl10cm(:,iCell),z_agl(1:nVertLevels),1000.0_RKIND,nVertLevels) > 20.0_RKIND) then
                     do k=1,nVertLevels
-                      wspd(k,iCell) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
+                      wspd(k) = sqrt(uzonal(k,iCell)**2+umeridional(k,iCell)**2)
                     end do
                     wind02_max(iCell) = max(wind02_max(iCell), col_depth_max(wspd , z_agl, 0.0_RKIND, 2000.0_RKIND, nVertLevels ))
                   endif
@@ -513,11 +533,23 @@ module mpas_convective_diagnostics
                 enddo
             endif
 
-            if (is_needed_ws10m_max) then
+            if (is_needed_ws10m_max .and. associated(u10m) .and. associated(v10m) ) then
                 do iCell=1,nCellsSolve
                   wind_speed_10m_max(iCell) = max(wind_speed_10m_max(iCell), sqrt(u10m(iCell)**2+v10m(iCell)**2))
                 enddo
             endif
+
+            if (is_needed_ws80m_max) then
+                do iCell=1, nCellsSolve
+                  z_agl(1:nVertLevels) = 0.5_RKIND * (zgrid(1:nVertLevels,iCell) &
+                          + zgrid(2:nVertLevelsP1,iCell)) - zgrid(1,iCell)
+                  wind_speed_80m_max(iCell) = max( wind_speed_80m_max(iCell),        &
+                        sqrt(column_height_value(uzonal(1:nVertLevels,iCell),         &
+                                      z_agl(1:nVertLevels), 80.0_RKIND, nVertLevels)**2 &
+                + column_height_value(umeridional(1:nVertLevels,iCell),    &
+                                      z_agl(1:nVertLevels), 80.0_RKIND, nVertLevels)**2))
+                end do
+            end if
 
             if (is_needed_lml_wsp_max) then
                 do iCell=1, nCellsSolve
@@ -564,6 +596,20 @@ module mpas_convective_diagnostics
                                                           + kiteAreasOnVertex(j,i)*vorticity(1:nVertLevels,i)
                   end do
                 end do
+
+!               (13 APR 26 - BCM [CIWRO/NSSL]): 
+!               Compute 0-2km vertical vorticity here since the UH terms hold the vorticity sum
+!               at the cell centers and have not been deallocated yet. 
+                if (is_needed_vorticity_max_02) then
+                    do iCell=1, nCellsSolve
+                        z_agl(1:nVertLevels) = 0.5_RKIND*(zgrid(1:nVertLevels,iCell) &
+                                             + zgrid(2:nVertLevelsP1,iCell)) - zgrid(1,iCell)
+                        vorticity_max_02(iCell) = max(vorticity_max_02(iCell),          &
+                            col_depth_max( updraft_helicity(1:nVertLevels,iCell)/areaCell(iCell), &
+                                           z_agl(1:nVertLevels), 0.0_RKIND, 2000.0_RKIND, nVertLevels ) )
+                    end do
+                end if
+
 !                call mpas_log_write('Min, max uh_neg 1 = $r, $r',realArgs=(/minval(updraft_helicity_neg),maxval(updraft_helicity_neg)/))
                 do iCell=1,nCells
                   do k=1,nVertLevels
@@ -996,6 +1042,7 @@ module mpas_convective_diagnostics
         real (kind=RKIND), dimension(:), pointer :: w_velocity_mean
         real (kind=RKIND), dimension(:), pointer :: wind02_max, wind02_integral_max
         real (kind=RKIND), dimension(:), pointer :: wind_speed_10m_max
+        real (kind=RKIND), dimension(:), pointer :: wind_speed_80m_max
         real (kind=RKIND), dimension(:), pointer :: wind_speed_10m_mean
         real (kind=RKIND), dimension(:), pointer :: u10m_mean, v10m_mean
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_max_16
@@ -1010,6 +1057,7 @@ module mpas_convective_diagnostics
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_min05_15
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_min_02
         real (kind=RKIND), dimension(:), pointer :: updraft_helicity_min_03
+        real (kind=RKIND), dimension(:), pointer :: vorticity_max_02
         real (kind=RKIND), dimension(:), pointer :: prec_acc_c, prec_acc_nc, snow_acc_nc
 
         if (MPAS_field_will_be_written('updraft_helicity_max')) then
@@ -1068,6 +1116,10 @@ module mpas_convective_diagnostics
             call mpas_pool_get_array(diag,'updraft_helicity_min_03', updraft_helicity_min_03)
             updraft_helicity_min_03(:) = 0.
         end if
+        if (MPAS_field_will_be_written('vorticity_max_02')) then
+            call mpas_pool_get_array(diag, 'vorticity_max_02', vorticity_max_02)
+            vorticity_max_02(:) = 0.
+        end if
         if (MPAS_field_will_be_written('w_velocity_max')) then
             call mpas_pool_get_array(diag, 'w_velocity_max', w_velocity_max)
             w_velocity_max(:) = 0.
@@ -1095,6 +1147,10 @@ module mpas_convective_diagnostics
         if (MPAS_field_will_be_written('wind_speed_10m_max')) then
             call mpas_pool_get_array(diag, 'wind_speed_10m_max', wind_speed_10m_max)
             wind_speed_10m_max(:) = 0.
+        end if
+        if (MPAS_field_will_be_written('wind_speed_80m_max')) then
+            call mpas_pool_get_array(diag, 'wind_speed_80m_max', wind_speed_80m_max)
+            wind_speed_80m_max(:) = 0.
         end if
         if (MPAS_field_will_be_written('wind_speed_10m_mean')) then
             call mpas_pool_get_array(diag, 'wind_speed_10m_mean', wind_speed_10m_mean)
