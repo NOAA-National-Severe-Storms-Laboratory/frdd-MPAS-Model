@@ -88,6 +88,9 @@
         <var name="updraft_helicity_min_03"   type="real"     dimensions="nCells Time" units="m^2 s^{-2}"
              description="Minimum 0-3km updraft helicity since last output"/>
 
+        <var name="vorticity_max_02"   type="real"     dimensions="nCells Time" units="s^{-1}"
+             description="Maximum 0-2km vertical vorticity since last output"/>
+
         <var name="w_velocity_max"         type="real"     dimensions="nCells Time" units="m s^{-1}"
              description="Maximum column w velocity since last output"/>
 
@@ -108,6 +111,9 @@
 
         <var name="wind_speed_10m_max"  type="real"     dimensions="nCells Time" units="m s^{-1}"
              description="Maximum 10 m wind speed since last output"/>
+
+        <var name="wind_speed_80m_max"  type="real"     dimensions="nCells Time" units="m s^{-1}"
+             description="Maximum 80 m wind speed since last output"/>
 
         <var name="wind_speed_10m_mean"  type="real"     dimensions="nCells Time" units="m s^{-1}"
              description="Mean 10 m wind speed since last output"/>
