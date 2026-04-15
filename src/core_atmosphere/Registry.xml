@@ -1199,12 +1199,14 @@
                         <var name="updraft_helicity_min05_15"/>
                         <var name="updraft_helicity_min_02"/>
                         <var name="updraft_helicity_min_03"/>
+			<var name="vorticity_max_02"/>
 			<var name="w_velocity_max"/>
 			<var name="w_velocity_min"/>
                         <var name="w_velocity_mean"/>
                         <var name="wind02_max"/>
                         <var name="wind02_integral_max"/>
                         <var name="wind_speed_10m_max"/>
+                        <var name="wind_speed_80m_max"/>
                         <var name="wind_speed_10m_mean"/>
                         <var name="u10m_mean"/>
                         <var name="v10m_mean"/>
