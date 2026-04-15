@@ -4546,9 +4546,9 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: sm_fg
       real (kind=RKIND), dimension(:), pointer :: soilz
 ! Chemistry
-      real (kind=RKIND), dimension(:,:), pointer :: smoke_fine_fg
-      real (kind=RKIND), dimension(:,:), pointer :: dust_fine_fg
-      real (kind=RKIND), dimension(:,:), pointer :: dust_coarse_fg
+      real (kind=RKIND), dimension(:,:), pointer :: smoke_fine_fg => null()
+      real (kind=RKIND), dimension(:,:), pointer :: dust_fine_fg => null()
+      real (kind=RKIND), dimension(:,:), pointer :: dust_coarse_fg => null()
       real (kind=RKIND), parameter :: conv_aer_kg2ug = 1.e9
 
       type (hashtable), allocatable :: level_hash

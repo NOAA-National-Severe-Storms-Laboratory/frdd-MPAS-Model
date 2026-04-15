@@ -466,6 +466,7 @@
 
  logical :: outputon = .false.
  integer :: i
+ character(len=256) :: nml_name
 !CCPP-compliant flags:
  character(len=StrKIND):: errmsg
  integer:: errflg
@@ -518,8 +519,9 @@
 
      case("mp_nssl2m")
        i = 1 ! always treat CCN as CCNA (for now)
+       nml_name = 'namelist.atmosphere' ! at some point need to get name if -n option is used
        call mp_nssl_init( errflg=errflg, errmsg=errmsg, threads=1, restart=.false., &
-                              fn_nml='namelist.atmosphere',                         & ! at some point need to get name if -n option is used
+                              fn_nml=nml_name,                                   & 
                               mpirank = dminfo%my_proc_id, mpiroot = IO_NODE,    &
                               con_g=gravity, con_rd=R_d, con_cp=cp, con_rv=R_v,  &
                               con_t0c=t00, con_cliq=cliq, con_csol=cice, con_eps=ep_2,   &
