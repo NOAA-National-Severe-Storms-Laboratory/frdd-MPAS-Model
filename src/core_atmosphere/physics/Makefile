@@ -288,7 +288,7 @@ clean:
 	( cd physics_noahmp/src; $(MAKE) clean )
 	( cd physics_noahmp/utility; $(MAKE) clean )
 	( if [ -d physics_noaa/TEMPO ]; then cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas clean; fi )
-	( if [ -d physics_noaa/NSSL-MP ]; then cd physics_noaa/NSSL-MP; $(MAKE) clean; fi )
+	( if [ -d physics_noaa/NSSL-MP ]; then cd physics_noaa/NSSL-MP; $(MAKE) -f MPAS/Makefile clean; fi )
 	( if [ -d physics_noaa/UGWP ]; then cd physics_noaa/UGWP; $(MAKE) clean; fi )
 	( if [ -d physics_noaa/RUCLSM ]; then cd physics_noaa/RUCLSM; $(MAKE) -f MPAS/Makefile clean; fi )
 	( if [ -d physics_noaa/MYNN-EDMF ]; then cd physics_noaa/MYNN-EDMF; cp ./MPAS/Makefile .; $(MAKE) clean; fi )

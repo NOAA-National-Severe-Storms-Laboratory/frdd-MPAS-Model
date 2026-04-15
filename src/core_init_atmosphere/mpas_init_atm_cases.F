@@ -1499,6 +1499,9 @@ module init_atm_cases
       integer :: iCell, iCell1, iCell2 , iEdge, ivtx, i, k, nz, nz1, itr, cell1, cell2
       integer, pointer :: nEdges, nVertices, maxEdges, nCellsSolve
       integer, pointer :: index_qv
+      integer, pointer :: index_nwfa, index_nifa
+      integer, pointer :: index_smoke_fine => null(), index_dust_fine => null(), index_dust_coarse => null()
+      character (len=StrKIND), pointer :: config_smoke_scheme, config_dust_scheme
 
       real (kind=RKIND), dimension(nVertLevels + 1 ) :: zc, zw, ah
       real (kind=RKIND), dimension(nVertLevels ) :: zu, dzw, rdzwp, rdzwm
@@ -1538,11 +1541,11 @@ module init_atm_cases
       logical, pointer :: config_use_sounding_z_levels
       real,    pointer :: config_xbubloc, config_ybubloc, delt, umv, vmv, dz_bot, dz_top, ztop, &
                           config_p_surface, config_qv_surface, config_th_surface,               &
-                          config_centlat, config_centlon
+                          config_centlat, config_centlon, config_ccn_conc, config_in_conc
+      real,    pointer :: rand_amp, bhrad, bvrad, zcent
       double precision, dimension(0:nVertLevels + 1) :: gzc, gze
       real (kind=RKIND) :: tmp1,tmp2
       integer           :: ke
-
 
 
 ! BEGIN LJW multibubble parameters (should be actually in namelist)
@@ -1550,12 +1553,12 @@ module init_atm_cases
       integer (kind=RKIND) :: multi_pert   = 3          ! (2*multi_pert_y + 1) # of bubbles
       real (kind=RKIND) :: xic          =  58500.0   ! center of bubble in x-direction (m)
       real (kind=RKIND) :: yjc          = 384000.0   ! center of bubble in y-direction (m)
-      real (kind=RKIND) :: zcent        =   1500.0   ! height of center of bubble above ground (m)
-      real (kind=RKIND) :: bhrad        =  10000.0   ! horizontal radius of bubble (m)
-      real (kind=RKIND) :: bvrad        =   1500.0   ! vertical radius of bubble (m)
+!      real (kind=RKIND) :: zcent        =   1500.0   ! height of center of bubble above ground (m)
+!      real (kind=RKIND) :: bhrad        =  10000.0   ! horizontal radius of bubble (m)
+!      real (kind=RKIND) :: bvrad        =   1500.0   ! vertical radius of bubble (m)
       real (kind=RKIND) :: bptpert  !    =     delt   ! max potential temp perturbation (K)
-      real (kind=RKIND) :: rand_amp     =      0.0   ! random number perturbation max amplitude
-      real (kind=RKIND) :: rand
+!      real (kind=RKIND) :: rand_amp     =      0.0   ! random number perturbation max amplitude
+      real (kind=RKIND) :: rand = -20
       integer           :: nb
       integer           :: ierr
       integer           :: iunit
@@ -1634,6 +1637,12 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_th_surface',config_th_surface) ! default val is 300.
       call mpas_pool_get_config(configs, 'config_centlat',config_centlat)
       call mpas_pool_get_config(configs, 'config_centlon',config_centlon)
+      call mpas_pool_get_config(configs, 'config_ccn_conc',config_ccn_conc)
+      call mpas_pool_get_config(configs, 'config_in_conc',config_in_conc)
+      call mpas_pool_get_config(configs, 'config_rand_amp',rand_amp)
+      call mpas_pool_get_config(configs, 'config_bhrad',bhrad)
+      call mpas_pool_get_config(configs, 'config_bvrad',bvrad)
+      call mpas_pool_get_config(configs, 'config_zcent',zcent)
       
       multi_pert = config_multi_pert
       bptpert    = delt 
@@ -1726,6 +1735,8 @@ module init_atm_cases
       call mpas_pool_get_array(state, 'scalars', scalars)
 
       call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
+      call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
 
       scalars(:,:,:) = 0.
 
@@ -1944,6 +1955,7 @@ module init_atm_cases
              relhum(k,i) = (1.-0.75*(ztemp/ztr)**1.25)
              if(t(k,i).lt.thetas) t(k,i) = thetas
            end if
+
            tb(k,i) = t(k,i)
            thi(k,i) = t(k,i)
            tbi(k,i) = t(k,i)
@@ -2026,6 +2038,22 @@ module init_atm_cases
 
        call mpas_dmpar_bcast_reals(dminfo, nz1, u_init)
        call mpas_dmpar_bcast_reals(dminfo, nz1, v_init)
+
+       do i=1,nCells
+         do k=1,nz1
+           ztemp = .5*(zgrid(k,i)+zgrid(k+1,i))
+           IF ( index_nwfa > 0 ) THEN
+              IF ( ztemp < 3000. ) THEN
+                scalars(index_nwfa,k,i) = config_ccn_conc/1.225
+              ELSE
+                scalars(index_nwfa,k,i) = 0.1*config_ccn_conc/1.225
+              ENDIF
+           ENDIF
+           IF ( index_nifa > 0 ) THEN 
+             scalars(index_nifa,k,i) = config_in_conc/1.225
+           ENDIF
+         end do
+       end do
 
 !
 !    for reference sounding
@@ -2158,13 +2186,14 @@ module init_atm_cases
             xloc = xCell(i) - xic
             yloc = yCell(i) - yb 
 
+            call random_number(rand)
+
             do k = 1,nz1
               ztemp = .5*(zgrid(k+1,i)+zgrid(k,i))
               rad   = sqrt((xloc/bhrad)**2+(yloc/bhrad)**2+((ztemp-zcent)/bvrad)**2)
               if( rad .lt. 1.0)  then
-       !        call random_number(rand)
        !        thi(k,i) = thi(k,i) + max(bptpert*cos(.5*pii*rad)**2 + rand_amp*(2.0*rand-1.0), 0.0)
-                thi(k,i) = thi(k,i) + bptpert*cos(.5*pii*rad)**2 
+                thi(k,i) = thi(k,i) + bptpert*cos(.5*pii*rad)**2 + rand_amp*2.0*(rand-0.5)
               end if
               t (k,i) = thi(k,i)*(1.+1.61*scalars(index_qv,k,i))
             end do
@@ -2183,11 +2212,13 @@ module init_atm_cases
             yloc = yCell(i) - ymid !supercell setting
           end if
 
+          call random_number(rand)
+
           do k = 1,nz1
             ztemp = .5*(zgrid(k+1,i)+zgrid(k,i))
             rad   = sqrt((xloc/bhrad)**2+(yloc/bhrad)**2+((ztemp-zcent)/bvrad)**2)
             if (rad .lt. 1)  then
-              thi(k,i) = thi(k,i) + bptpert*cos(.5*pii*rad)**2
+              thi(k,i) = thi(k,i) + bptpert*cos(.5*pii*rad)**2 + rand_amp*2.0*(rand-0.5)
             end if
             t (k,i) = thi(k,i)*(1.+1.61*scalars(index_qv,k,i))
           end do

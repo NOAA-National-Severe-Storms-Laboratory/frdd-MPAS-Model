@@ -1442,7 +1442,8 @@ end subroutine compute_accumulated_max_hail
        t1d(k)  = th_p(i,k,j) * pi_p(i,k,j)
        tempc   = t1d(k) - 273.16_RKIND
        qvs1d(k) = rslf(p1d(k),t1d(k))
-       if(tempc .le. 0._RKIND) qvs1d(k) = rsif(p1d(k),t1d(k))
+     ! Turned off the ice option so that RH is always wrt to liquid (ERM)
+     !  if(tempc .le. 0._RKIND) qvs1d(k) = rsif(p1d(k),t1d(k))
        qv1d(k) = qv_p(i,k,j)
        relhum(k,i) = qv1d(k) / qvs1d(k)
        relhum(k,i) = relhum(k,i) * 100._RKIND
