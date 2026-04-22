@@ -9,7 +9,7 @@
 	url = https://github.com/NCAR/MYNN-EDMF
 [submodule "src/core_atmosphere/physics/physics_noaa/RUCLSM"]
 	path = src/core_atmosphere/physics/physics_noaa/RUCLSM
-	url = https://github.com/NOAA-GSL/RUCLSM.git
+	url = https://github.com/NOAA-National-Severe-Storms-Laboratory/frdd-wofs-mpas-ruclsm.git
 [submodule "src/core_atmosphere/physics/physics_noaa/GFL"]
 	path = src/core_atmosphere/physics/physics_noaa/GFL
 	url = https://github.com/NOAA-GSL/GFL.git
