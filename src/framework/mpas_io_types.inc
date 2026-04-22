@@ -22,6 +22,7 @@
    integer, parameter :: MPAS_IO_NETCDF   = 3, &
                          MPAS_IO_PNETCDF  = 4, &
                          MPAS_IO_NETCDF4  = 5, &
+                         MPAS_IO_NETCDF4c = 15, &
                          MPAS_IO_PNETCDF5 = 6
 
    ! Field and attribute types
