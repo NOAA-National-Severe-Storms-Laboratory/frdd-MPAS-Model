@@ -4402,7 +4402,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:), pointer :: psfc
       real (kind=RKIND), dimension(:), pointer :: skintemp
       real (kind=RKIND), dimension(:), pointer :: snow
-      real (kind=RKIND), dimension(:), pointer :: snowh
+!      real (kind=RKIND), dimension(:), pointer :: snowh
       real (kind=RKIND), dimension(:), pointer :: snowc
       real (kind=RKIND), dimension(:), pointer :: canwat
       real (kind=RKIND), dimension(:), pointer :: vegfra
@@ -4569,7 +4569,7 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'psfc', psfc)
       call mpas_pool_get_array(fg, 'skintemp', skintemp)
       call mpas_pool_get_array(fg, 'snow', snow)
-      call mpas_pool_get_array(fg, 'snowh', snowh)
+!      call mpas_pool_get_array(fg, 'snowh', snowh)
       call mpas_pool_get_array(fg, 'snowc', snowc)
       call mpas_pool_get_array(fg, 'canwat', canwat)
       call mpas_pool_get_array(fg, 'vegfra', vegfra)
@@ -5252,7 +5252,7 @@ module init_atm_cases
              trim(field % field) == 'PRES' .or. &
              trim(field % field) == 'PRESSURE' .or. &
              trim(field % field) == 'SNOW' .or. &
-             trim(field % field) == 'SNOWH' .or. &
+!             trim(field % field) == 'SNOWH' .or. &
              trim(field % field) == 'CANWAT' .or. &
              trim(field % field) == 'VEGFRA' .or. &
              trim(field % field) == 'GREENFRAC' .or. &
@@ -5319,7 +5319,7 @@ module init_atm_cases
                 trim(field % field) == 'SOILT160' .or. &
                 trim(field % field) == 'SOILT300' .or. &
                 trim(field % field) == 'SNOW' .or. &
-                trim(field % field) == 'SNOWH' .or. &
+!                trim(field % field) == 'SNOWH' .or. &
                 trim(field % field) == 'CANWAT' .or. &
                 trim(field % field) == 'VEGFRA' .or. &
                 trim(field % field) == 'GREENFRAC' .or. &
@@ -6750,22 +6750,22 @@ module init_atm_cases
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'snow', destField1d)
                ndims = 1
-            else if (trim(field % field) == 'SNOWH') then
-               call mpas_log_write('Interpolating SNOWH')
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = 0
-
-               !masked = 0
-               !fillval = 0.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'snowh', destField1d)
-               ndims = 1
-
+!             else if (trim(field % field) == 'SNOWH') then
+!                call mpas_log_write('Interpolating SNOWH')
+! 
+!                interp_list(1) = FOUR_POINT
+!                interp_list(2) = W_AVERAGE4
+!                interp_list(3) = 0
+! 
+!                !masked = 0
+!                !fillval = 0.0
+! 
+!                nInterpPoints = nCells
+!                latPoints => latCell
+!                lonPoints => lonCell
+!                call mpas_pool_get_array(fg, 'snowh', destField1d)
+!                ndims = 1
+! 
             else if (trim(field % field) == 'CANWAT') then
                call mpas_log_write('Interpolating CANWAT')
 
