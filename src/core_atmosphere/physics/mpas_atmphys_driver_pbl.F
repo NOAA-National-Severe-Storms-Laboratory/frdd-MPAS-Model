@@ -1344,6 +1344,7 @@
                    bl_mynn_cloudmix,    &
                    bl_mynn_mixqt,       &
                    bl_mynn_ess,         &
+                   bl_mynn_version,     &
                    bl_mynn_tkebudget,   &
                    icloud_bl,           &
                    spp_pbl
@@ -1540,6 +1541,7 @@
        call mpas_pool_get_config(configs,'config_mynn_mixclouds'  ,bl_mynn_cloudmix   )
        call mpas_pool_get_config(configs,'config_mynn_mixqt'      ,bl_mynn_mixqt      )
        call mpas_pool_get_config(configs,'config_mynn_ess'        ,bl_mynn_ess        )
+       call mpas_pool_get_config(configs,'config_mynn_version'    ,bl_mynn_version)
        call mpas_pool_get_config(configs,'config_mynn_tkeadvect'  ,bl_mynn_tkeadvect  )
        call mpas_pool_get_config(configs,'config_mynn_tkebudget'  ,bl_mynn_tkebudget  )
        call mpas_pool_get_config(configs,'config_icloud_bl'       ,icloud_bl          )
@@ -1634,6 +1636,7 @@
                   bl_mynn_cloudmix   = bl_mynn_cloudmix    ,                                              &
                   bl_mynn_mixqt      = bl_mynn_mixqt       ,                                              &
                   bl_mynn_ess        = bl_mynn_ess         ,                                              &
+                  bl_mynn_version    = bl_mynn_version     ,                                              &
                   mix_chem           = mix_chem            ,                                              &
                   nchem              = num_chem            ,                                              &
                   ndvel              = num_chem            ,                                              &
