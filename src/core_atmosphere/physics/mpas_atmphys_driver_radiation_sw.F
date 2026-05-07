@@ -257,7 +257,7 @@
 
  call mpas_pool_get_config(configs,'config_microp_scheme' ,mp_scheme     )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme)
- call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)     
+ call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
 
  if(allocated(f_ice)        ) deallocate(f_ice        )
  if(allocated(f_rain)       ) deallocate(f_rain       )
@@ -391,6 +391,7 @@
  logical,pointer:: config_o3climatology
  logical,pointer:: config_microp_re
  logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_radt_use_aerosol
  character(len=StrKIND),pointer:: radt_sw_scheme
  character(len=StrKIND),pointer:: microp_scheme
 
@@ -412,6 +413,7 @@
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme      )
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_radt_use_aerosol',config_radt_use_aerosol)
       
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
@@ -570,6 +572,7 @@
           case default          
        end select microp_select
 
+       if ( config_radt_use_aerosol ) then
        aerosol_select: select case(microp_scheme)
           case("mp_thompson_aerosols")
              call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -681,6 +684,7 @@
                             
           case default
        end select aerosol_select
+       endif ! config_radt_use_aerosol
 
        do j = jts,jte
        do k = kts,kte+2

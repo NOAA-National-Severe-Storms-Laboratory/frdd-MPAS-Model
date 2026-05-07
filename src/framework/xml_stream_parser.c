@@ -1282,6 +1282,11 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Parallel-NetCDF");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
+			else if (strstr(iotype, "netcdf4c") != NULL) {
+				i_iotype = 4;
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "NetCDF-4/HDF5 with deflate");
+				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+			}
 			else if (strstr(iotype, "netcdf4") != NULL) {
 				i_iotype = 3;
 				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "NetCDF-4/HDF5");
@@ -1631,6 +1636,11 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 			else if (strstr(iotype, "pnetcdf") != NULL) {
 				i_iotype = 0;
 				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Parallel-NetCDF");
+				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+			}
+			else if (strstr(iotype, "netcdf4c") != NULL) {
+				i_iotype = 4;
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "NetCDF-4/HDF5 with deflate");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 			else if (strstr(iotype, "netcdf4") != NULL) {
@@ -2061,6 +2071,11 @@ void xml_stream_get_attributes(char *fname, char *streamname, int *mpi_comm, cha
 				else if (strstr(xml_iotype, "pnetcdf") != NULL) {
 					sprintf(io_type, "%s", xml_iotype);
 					snprintf(msgbuf, MSGSIZE, "Using io_type Parallel-NetCDF for mesh stream");
+					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+				}
+				else if (strstr(xml_iotype, "netcdf4c") != NULL) {
+					sprintf(io_type, "%s", xml_iotype);
+					snprintf(msgbuf, MSGSIZE, "Using io_type NetCDF-4/HDF5 with deflate for mesh stream");
 					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 				}
 				else if (strstr(xml_iotype, "netcdf4") != NULL) {

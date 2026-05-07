@@ -224,8 +224,13 @@ module init_atm_core_interface
          inquire(file="QNWFA_QNIFA_SIGMA_MONTHLY.dat",exist=lexist)
          if(lexist) mp_thompson_aers_in = .true.
       else
-         lbcs = .false.
+         IF ( config_init_case == 4 .or. config_init_case == 5 ) THEN
+         tempo_aerosolaware_in = .true.
+         ELSE
          tempo_aerosolaware_in = .false.
+         ENDIF
+
+         lbcs = .false.
          mp_thompson_aers_in = .false.
       end if
 

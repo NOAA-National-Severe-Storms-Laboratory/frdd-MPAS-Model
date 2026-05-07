@@ -111,6 +111,10 @@
                      description="projecting layer values to the interface, linear vertical interpolation or integral"
                      possible_values="'linear_interpolation' or 'layer_integral' (layer average value)"/>
 
+        </nml_record>
+
+        <nml_record name="ideal_init" in_defaults="true">
+
                 <nml_option name="config_sounding_type" type="integer" default_value="1" in_defaults="false"
                      units="-"
                      description="Sounding option: 1=internal, 2=read in external (for cases 4 and 5 only)"
@@ -130,6 +134,31 @@
                      units="-"
                      description="0 for internal z levels, 1 to read in input_grid_z (for cases 4 and 5 only)"
                      possible_values="Integer value of 0 or 1"/>
+
+                <nml_option name="config_stretch_z" type="integer" default_value="0" in_defaults="false"
+                     units="-"
+                     description="1 for stretched z levels (for cases 4 and 5 only)"
+                     possible_values="Integer value of 0 or 1"/>
+
+                <nml_option name="config_nbndlyr" type="integer" default_value="0"
+                     units="-"
+                     description="Number of unstretched boundary points for stretch_z=1"
+                     possible_values="Non-negative integer"/>
+
+                <nml_option name="config_dz_bot" type="real" default_value="200."
+                     units="-"
+                     description="dz at surface for stretch_z=1"
+                     possible_values="Positive real"/>
+
+                <nml_option name="config_dz_top" type="real" default_value="500."
+                     units="-"
+                     description="dz max at model top for stretch_z=1"
+                     possible_values="Positive real"/>
+
+                <nml_option name="config_ztop" type="real" default_value="20000."
+                     units="-"
+                     description="model top altitude"
+                     possible_values="Positive real"/>
 
                 <nml_option name="config_use_sounding_z_levels" type="logical" default_value="false" in_defaults="false"
                      units="-"
@@ -151,6 +180,26 @@
                      description="delta-t for thermal bubble"
                      possible_values="real number"/>
 
+                <nml_option name="config_bhrad" type="real" default_value="10000.0"
+                     units="m"
+                     description="thermal bubble horizontal radius"
+                     possible_values="real number"/>
+
+                <nml_option name="config_bvrad" type="real" default_value="1500.0"
+                     units="m"
+                     description="thermal bubble vertical radius"
+                     possible_values="real number"/>
+
+                <nml_option name="config_zcent" type="real" default_value="1500.0"
+                     units="m"
+                     description="thermal bubble center altitude"
+                     possible_values="real number"/>
+
+                <nml_option name="config_rand_amp" type="real" default_value="0.0"
+                     units="-"
+                     description="random perturbation amplitude"
+                     possible_values="real number"/>
+
                 <nml_option name="config_umv" type="real" default_value="0.0"
                      units="-"
                      description="grid motion in U direction"
@@ -159,6 +208,66 @@
                 <nml_option name="config_vmv" type="real" default_value="0.0"
                      units="-"
                      description="grid motion in V direction"
+                     possible_values="real number"/>
+
+                <nml_option name="config_p_surface" type="real" default_value="100000.0"
+                     units="Pa"
+                     description="Ideal WK Surface pressure"
+                     possible_values="real number"/>
+
+                <nml_option name="config_qv_surface" type="real" default_value="14.0"
+                     units="g/kg"
+                     description="Ideal WK Surface vapor mixing ratio"
+                     possible_values="real number"/>
+
+                <nml_option name="config_th_surface" type="real" default_value="300.0"
+                     units="K"
+                     description="Ideal WK Surface Temperature"
+                     possible_values="real number"/>
+
+                <nml_option name="config_landwidth" type="integer" default_value="0"
+                     units="gridpoints"
+                     description="Width of land strip"
+                     possible_values="integer number"/>
+
+                <nml_option name="config_lu_input" type="integer" default_value="0"
+                     units="-"
+                     description="Land use index"
+                     possible_values="integer number"/>
+
+                <nml_option name="config_isltyp" type="integer" default_value="4"
+                     units="-"
+                     description="Ideal soil type index"
+                     possible_values="integer number"/>
+
+                <nml_option name="config_sst_input" type="real" default_value="300.0"
+                     units="K"
+                     description="Ideal Sea Surface Temperature"
+                     possible_values="real number"/>
+
+                <nml_option name="config_vegfra" type="real" default_value="0.5"
+                     units="-"
+                     description="Ideal Vegetation Fraction"
+                     possible_values="real number"/>
+
+                <nml_option name="config_centlat" type="real" default_value="0.0"
+                     units="-"
+                     description="Central Latitude"
+                     possible_values="real number"/>
+
+                <nml_option name="config_centlon" type="real" default_value="0.0"
+                     units="-"
+                     description="Central Longitude"
+                     possible_values="real number"/>
+
+                <nml_option name="config_ccn_conc" type="real" default_value="0.8e9"
+                     units="#/m3"
+                     description="Sea-level CCN concentration"
+                     possible_values="real number"/>
+
+                <nml_option name="config_in_conc" type="real" default_value="5.e7"
+                     units="#/m3"
+                     description="Sea-level IN concentration"
                      possible_values="real number"/>
 
 
