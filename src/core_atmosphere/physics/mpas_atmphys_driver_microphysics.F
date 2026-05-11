@@ -1470,7 +1470,7 @@ end subroutine compute_accumulated_max_hail
 !
 !=================================================================================================================
 
- use module_mp_nssl_2mom, only : nssl_qtodbz
+ use module_mp_nssl_2mom, only : nssl_qtodbz, nssl_qtodbz1d
 
 !input arguments:
  type(mpas_pool_type),intent(in):: configs,state,mesh
@@ -1488,12 +1488,14 @@ end subroutine compute_accumulated_max_hail
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
  real(kind=RKIND),dimension(:,:),pointer:: pressure_p,pressure_base
  integer,pointer:: nCells,nVertLevels,nVertLevelsP1,index_qv,index_qc,index_qr,index_qs,index_qg, &
-                    index_nr,index_ns,index_ng,index_ni,index_qi
+                    index_nc,index_nr,index_ns,index_ng,index_ni,index_qi,index_qh,index_nh, &
+                    index_volg,index_volh,index_zrw,index_zgw,index_zhw
 
 !local variables and arrays:
  integer:: iCell,k,kp
- real(kind=RKIND),dimension(:),allocatable:: qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,ns1d,ng1d, &
-                                             qi1d,ni1d,t1d,p1d,dBZ1d,zp
+ real(kind=RKIND),dimension(:),allocatable:: qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,nc1d,ns1d,ng1d, &
+                                             qi1d,ni1d,qh1d,nh1d,vg1d,vh1d,t1d,p1d,dBZ1d,zp, &
+                                             zr1d,zg1d,zh1d,pi_term1d
  real(kind=RKIND):: w1,w2,z_agl,pi_term,rho_term
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -1509,10 +1511,18 @@ end subroutine compute_accumulated_max_hail
  call mpas_pool_get_dimension(state,'index_qr',index_qr)
  call mpas_pool_get_dimension(state,'index_qs',index_qs)
  call mpas_pool_get_dimension(state,'index_qg',index_qg)
+ call mpas_pool_get_dimension(state,'index_qh',index_qh)
  call mpas_pool_get_dimension(state,'index_nr',index_nr)
  call mpas_pool_get_dimension(state,'index_ns',index_ns)
+ call mpas_pool_get_dimension(state,'index_nc',index_nc)
  call mpas_pool_get_dimension(state,'index_ni',index_ni)
  call mpas_pool_get_dimension(state,'index_ng',index_ng)
+ call mpas_pool_get_dimension(state,'index_nh',index_nh)
+ call mpas_pool_get_dimension(state,'index_volg',index_volg)
+ call mpas_pool_get_dimension(state,'index_volh',index_volh)
+ call mpas_pool_get_dimension(state,'index_zrw',index_zrw)
+ call mpas_pool_get_dimension(state,'index_zgw',index_zgw)
+ call mpas_pool_get_dimension(state,'index_zhw',index_zhw)
 
  call mpas_pool_get_array(state,'theta_m',theta_m,time_lev)
  call mpas_pool_get_array(state,'rho_zz',rho_zz,time_lev)
@@ -1611,6 +1621,7 @@ end subroutine compute_accumulated_max_hail
        allocate(nr1d(1:nVertLevels) )
        allocate(qs1d(1:nVertLevels) )
        allocate(qg1d(1:nVertLevels) )
+       allocate(ng1d(1:nVertLevels) )
        allocate(t1d(1:nVertLevels)  )
        allocate(p1d(1:nVertLevels)  )
        allocate(dBZ1d(1:nVertLevels))
@@ -1635,6 +1646,8 @@ end subroutine compute_accumulated_max_hail
              if(index_qs > 0) qs1d(k) = scalars(index_qs,k,iCell)
              qg1d(k) = 0._RKIND
              if(index_qg > 0) qg1d(k) = scalars(index_qg,k,iCell)
+             ng1d(k) = 0._RKIND
+             if(index_ng > 0) ng1d(k) = scalars(index_ng,k,iCell)
              ! Estimate nr from qr when nr is zero, following Thompson's own
              ! convention (mp_gt_driver lines 1723-1726): assume median volume
              ! diameter (MVD) = 1 mm, then derive nr from the gamma DSD.
@@ -1681,6 +1694,7 @@ end subroutine compute_accumulated_max_hail
        deallocate(nr1d )
        deallocate(qs1d )
        deallocate(qg1d )
+       deallocate(ng1d )
        deallocate(t1d  )
        deallocate(p1d  )
        deallocate(dBZ1d)
@@ -1691,16 +1705,26 @@ end subroutine compute_accumulated_max_hail
        ! These use the exact gamma-distributed size distributions and proper
        ! dielectric constants for NSSL hydrometeor properties.
        allocate(qv1d(1:nVertLevels) )
+       allocate(qc1d(1:nVertLevels) )
        allocate(qr1d(1:nVertLevels) )
        allocate(qi1d(1:nVertLevels) )
        allocate(qs1d(1:nVertLevels) )
        allocate(qg1d(1:nVertLevels) )
+       allocate(qh1d(1:nVertLevels) )
+       allocate(nc1d(1:nVertLevels) )
        allocate(nr1d(1:nVertLevels) )
        allocate(ni1d(1:nVertLevels) )
        allocate(ns1d(1:nVertLevels) )
        allocate(ng1d(1:nVertLevels) )
+       allocate(nh1d(1:nVertLevels) )
+       allocate(vg1d(1:nVertLevels) )
+       allocate(vh1d(1:nVertLevels) )
+       allocate(zr1d(1:nVertLevels) )
+       allocate(zg1d(1:nVertLevels) )
+       allocate(zh1d(1:nVertLevels) )
        allocate(t1d(1:nVertLevels)  )
        allocate(p1d(1:nVertLevels)  )
+       allocate(pi_term1d(1:nVertLevels)  )
        allocate(dBZ1d(1:nVertLevels))
        allocate(zp(1:nVertLevels)   )
 
@@ -1710,9 +1734,16 @@ end subroutine compute_accumulated_max_hail
              p1d(k)  = pressure_base(k,iCell) + pressure_p(k,iCell)
              ! Calculate temperature from theta_m
              pi_term = (p1d(k)/100000.0_RKIND)**(287.0_RKIND/1003.5_RKIND)
+             pi_term1d(k) = pi_term
              t1d(k)  = (theta_m(k,iCell) / (1._RKIND + (1._RKIND/0.608_RKIND)*scalars(index_qv,k,iCell))) * pi_term
              ! Extract mixing ratios (NSSL has qr, qs, qg)
              qv1d(k) = scalars(index_qv,k,iCell)
+
+             qc1d(k) = 0._RKIND
+             if(index_qc > 0) qc1d(k) = scalars(index_qc,k,iCell)
+             nc1d(k) = 0._RKIND
+             if(index_nc > 0) nc1d(k) = scalars(index_nc,k,iCell)
+
              qr1d(k) = 0._RKIND
              if(index_qr > 0) qr1d(k) = scalars(index_qr,k,iCell)
              nr1d(k) = 0._RKIND
@@ -1731,21 +1762,46 @@ end subroutine compute_accumulated_max_hail
              if(index_qg > 0) qg1d(k) = scalars(index_qg,k,iCell)
              ng1d(k) = 0._RKIND
              if(index_ng > 0) ng1d(k) = scalars(index_ng,k,iCell)
+             qh1d(k) = 0._RKIND
+             if(index_qh > 0) qh1d(k) = scalars(index_qh,k,iCell)
+             nh1d(k) = 0._RKIND
+             if(index_nh > 0) nh1d(k) = scalars(index_nh,k,iCell)
              ! Height AGL
+
+             vg1d(k) = 0._RKIND
+             if(index_volg > 0) vg1d(k) = scalars(index_volg,k,iCell)
+             vh1d(k) = 0._RKIND
+             if(index_volh > 0) vh1d(k) = scalars(index_volh,k,iCell)
+
+             zr1d(k) = 0._RKIND
+             if(index_zrw > 0) zr1d(k) = scalars(index_zrw,k,iCell)
+             zg1d(k) = 0._RKIND
+             if(index_zgw > 0) zg1d(k) = scalars(index_zgw,k,iCell)
+             zh1d(k) = 0._RKIND
+             if(index_zhw > 0) zh1d(k) = scalars(index_zhw,k,iCell)
+
              zp(k) = 0.5_RKIND*(zgrid(k,iCell)+zgrid(k+1,iCell)) - zgrid(1,iCell)
              dBZ1d(k) = -35._RKIND
           enddo
 
           ! Call NSSL-MP-specific reflectivity calculation
           ! Uses gamma-distributed size distributions and NSSL dielectric properties
-           do k=1,nVertLevels
-            
-             dBZ1d(k) = nssl_qtodbz(             &
-                              qc=0.0_RKIND, qr=qr1d(k), qi=qi1d(k), qs=qs1d(k), qh=qg1d(k), qhl=0.0_RKIND,&
-                              ccw=0.0_RKIND, crw=nr1d(k), cci=ni1d(k), csw=ns1d(k), chw=ng1d(k), chl=0.0_RKIND,  &
-                              vhw=0.0_RKIND, vhl=0.0_RKIND, zrw=0.0_RKIND, zhw=0.0_RKIND, zhl=0.0_RKIND, &
-                              pb=pi_term, tb=theta_m(k,iCell),rho_air=rho_zz(k,iCell)  )
-           enddo
+!            do k=1,nVertLevels
+!             
+!              dBZ1d(k) = nssl_qtodbz(             &
+!                               qc=0.0_RKIND, qr=qr1d(k), qi=qi1d(k), qs=qs1d(k), qh=qg1d(k), qhl=qh1d(k),&
+!                               ccw=0.0_RKIND, crw=nr1d(k), cci=ni1d(k), csw=ns1d(k), chw=ng1d(k), chl=0.0_RKIND,  &
+!                               vhw=vg1d(k), vhl=vh1d(k), zrw=0.0_RKIND, zhw=0.0_RKIND, zhl=0.0_RKIND, &
+!                               pb=pi_term, tb=theta_m(k,iCell),rho_air=rho_zz(k,iCell)  )
+! 
+!            enddo
+
+             call nssl_qtodbz1d(dbz_in=dBZ1d,nz=nVertLevels,                               &
+                              qc=qc1d, qr=qr1d, qi=qi1d, qs=qs1d, qh=qg1d, qhl=qh1d,       &
+                              ccw=nc1d, crw=nr1d, cci=ni1d, csw=ns1d, chw=ng1d, chl=qh1d,  &
+                              vhw=vg1d, vhl=vh1d, zrw=zr1d, zhw=zg1d, zhl=zh1d,            &
+                              pb=pi_term1d, tb=theta_m(1:nVertLevels,iCell),rho_air=rho_zz(1:nVertLevels,iCell)  )
+
 !           do k=1,nVertLevels
 !              call compute_nssl_reflectivity( &
 !                  qr=qr1d(k), qc=0.0_RKIND, qi=0.0_RKIND, qs=qs1d(k), &
@@ -1778,16 +1834,26 @@ end subroutine compute_accumulated_max_hail
        enddo
 
        deallocate(qv1d )
+       deallocate(qc1d )
        deallocate(qr1d )
        deallocate(qi1d )
        deallocate(qs1d )
        deallocate(qg1d )
+       deallocate(qh1d )
+       deallocate(nc1d )
        deallocate(nr1d )
        deallocate(ni1d )
        deallocate(ns1d )
        deallocate(ng1d )
+       deallocate(nh1d )
+       deallocate(vg1d )
+       deallocate(vh1d )
+       deallocate(zr1d )
+       deallocate(zg1d )
+       deallocate(zh1d )
        deallocate(t1d  )
        deallocate(p1d  )
+       deallocate(pi_term1d )
        deallocate(dBZ1d)
        deallocate(zp   )
 
