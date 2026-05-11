@@ -33,7 +33,8 @@
  public:: allocate_microphysics,   &
           deallocate_microphysics, &
           driver_microphysics,     &
-          init_microphysics
+          init_microphysics,          &
+          init_reflectivity_diagnostic
 
 
 !MPAS driver for parameterization of cloud microphysics processes.
@@ -1459,6 +1460,419 @@ end subroutine compute_accumulated_max_hail
  if(allocated(qvs1d)) deallocate(qvs1d)
 
  end subroutine compute_relhum
+
+!=================================================================================================================
+ subroutine init_reflectivity_diagnostic(configs,state,time_lev,diag_physics,diag,mesh)
+!=================================================================================================================
+!
+! Compute radar reflectivity at initial time using the initial atmospheric state.
+! This subroutine extracts reflectivity from microphysics fields without running the full physics driver.
+!
+!=================================================================================================================
+
+ use module_mp_nssl_2mom, only : nssl_qtodbz
+
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs,state,mesh
+ integer,intent(in):: time_lev
+
+!inout arguments:
+ type(mpas_pool_type),intent(inout):: diag_physics,diag
+
+!local pointers:
+ character(len=StrKIND),pointer:: microp_scheme
+ real(kind=RKIND),dimension(:,:),pointer:: refl10cm,refl10cm_p
+ real(kind=RKIND),dimension(:),pointer:: refl10cm_max,refl10cm_1km,refl10cm_1km_max
+ real(kind=RKIND),dimension(:,:),pointer:: theta_m,rho_zz
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer:: zgrid
+ real(kind=RKIND),dimension(:,:),pointer:: pressure_p,pressure_base
+ integer,pointer:: nCells,nVertLevels,nVertLevelsP1,index_qv,index_qc,index_qr,index_qs,index_qg, &
+                    index_nr,index_ns,index_ng,index_ni,index_qi
+
+!local variables and arrays:
+ integer:: iCell,k,kp
+ real(kind=RKIND),dimension(:),allocatable:: qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,ns1d,ng1d, &
+                                             qi1d,ni1d,t1d,p1d,dBZ1d,zp
+ real(kind=RKIND):: w1,w2,z_agl,pi_term,rho_term
+
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
+
+ call mpas_pool_get_dimension(mesh,'nCells',nCells)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+ call mpas_pool_get_dimension(mesh,'nVertLevelsP1',nVertLevelsP1)
+ call mpas_pool_get_dimension(state,'index_qv',index_qv)
+ call mpas_pool_get_dimension(state,'index_qc',index_qc)
+ call mpas_pool_get_dimension(state,'index_qi',index_qi)
+ call mpas_pool_get_dimension(state,'index_qr',index_qr)
+ call mpas_pool_get_dimension(state,'index_qs',index_qs)
+ call mpas_pool_get_dimension(state,'index_qg',index_qg)
+ call mpas_pool_get_dimension(state,'index_nr',index_nr)
+ call mpas_pool_get_dimension(state,'index_ns',index_ns)
+ call mpas_pool_get_dimension(state,'index_ni',index_ni)
+ call mpas_pool_get_dimension(state,'index_ng',index_ng)
+
+ call mpas_pool_get_array(state,'theta_m',theta_m,time_lev)
+ call mpas_pool_get_array(state,'rho_zz',rho_zz,time_lev)
+ call mpas_pool_get_array(state,'scalars',scalars,time_lev)
+ call mpas_pool_get_array(mesh,'zgrid',zgrid)
+ call mpas_pool_get_array(diag,'pressure_p',pressure_p)
+ call mpas_pool_get_array(diag,'pressure_base',pressure_base)
+
+ call mpas_pool_get_array(diag_physics,'refl10cm',refl10cm)
+ call mpas_pool_get_array(diag_physics,'refl10cm_max',refl10cm_max)
+ call mpas_pool_get_array(diag_physics,'refl10cm_1km',refl10cm_1km)
+ call mpas_pool_get_array(diag_physics,'refl10cm_1km_max',refl10cm_1km_max)
+
+ ! Initialize reflectivity arrays
+ refl10cm(:,:) = -35._RKIND
+ refl10cm_max(:) = -35._RKIND
+ refl10cm_1km(:) = -35._RKIND
+ refl10cm_1km_max(:) = -35._RKIND
+
+ microp_select: select case(trim(microp_scheme))
+    case ("mp_wsm6")
+       allocate(qv1d(1:nVertLevels) )
+       allocate(qc1d(1:nVertLevels) )
+       allocate(qr1d(1:nVertLevels) )
+       allocate(qs1d(1:nVertLevels) )
+       allocate(qg1d(1:nVertLevels) )
+       allocate(t1d(1:nVertLevels)  )
+       allocate(p1d(1:nVertLevels)  )
+       allocate(dBZ1d(1:nVertLevels))
+       allocate(zp(1:nVertLevels)   )
+
+       do iCell=1,nCells
+          do k=1,nVertLevels
+             ! Calculate pressure at full levels
+             p1d(k)  = pressure_base(k,iCell) + pressure_p(k,iCell)
+             ! Calculate temperature from theta_m
+             pi_term = (p1d(k)/100000.0_RKIND)**(287.0_RKIND/1003.5_RKIND)
+             t1d(k)  = (theta_m(k,iCell) / (1._RKIND + (1._RKIND/0.608_RKIND)*scalars(index_qv,k,iCell))) * pi_term
+             ! Extract mixing ratios
+             qv1d(k) = scalars(index_qv,k,iCell)
+             qc1d(k) = 0._RKIND
+             if(index_qc > 0) qc1d(k) = scalars(index_qc,k,iCell)
+             qr1d(k) = 0._RKIND
+             if(index_qr > 0) qr1d(k) = scalars(index_qr,k,iCell)
+             qs1d(k) = 0._RKIND
+             if(index_qs > 0) qs1d(k) = scalars(index_qs,k,iCell)
+             qg1d(k) = 0._RKIND
+             if(index_qg > 0) qg1d(k) = scalars(index_qg,k,iCell)
+             ! Height AGL
+             zp(k) = 0.5_RKIND*(zgrid(k,iCell)+zgrid(k+1,iCell)) - zgrid(1,iCell)
+             dBZ1d(k) = -35._RKIND
+          enddo
+
+          ! Call reflectivity calculation
+          call refl10cm_wsm6(qv1d,qr1d,qs1d,qg1d,t1d,p1d,dBZ1d,1,nVertLevels)
+
+          ! Copy results to arrays
+          kp = 1
+          do k=1,nVertLevels
+             dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
+             refl10cm(k,iCell) = dBZ1d(k)
+             if(zp(k) < 1000._RKIND) kp = k
+          enddo
+          refl10cm_max(iCell) = maxval(dBZ1d(:))
+
+          ! Interpolate to 1 km AGL
+          if(kp+1 <= nVertLevels .and. zp(kp+1) > zp(kp)) then
+             w1 = (zp(kp+1)-1000._RKIND)/(zp(kp+1)-zp(kp))
+             w2 = 1.0_RKIND - w1
+             refl10cm_1km(iCell) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
+          else
+             refl10cm_1km(iCell) = refl10cm_max(iCell)
+          endif
+          refl10cm_1km_max(iCell) = refl10cm_1km(iCell)
+       enddo
+
+       deallocate(qv1d )
+       deallocate(qc1d )
+       deallocate(qr1d )
+       deallocate(qs1d )
+       deallocate(qg1d )
+       deallocate(t1d  )
+       deallocate(p1d  )
+       deallocate(dBZ1d)
+       deallocate(zp   )
+
+    case ("mp_tempo")
+       ! TEMPO microphysics - use Thompson reflectivity formula since TEMPO is
+       ! derived from Thompson and uses the same hydrometeor species.
+       ! Must initialize Thompson module constants (cre, crg, cse, cge, etc.)
+       ! that calc_refl10cm depends on. Pass .false. to skip reading lookup tables.
+       call thompson_init(.false.)
+       allocate(qv1d(1:nVertLevels) )
+       allocate(qc1d(1:nVertLevels) )
+       allocate(qr1d(1:nVertLevels) )
+       allocate(nr1d(1:nVertLevels) )
+       allocate(qs1d(1:nVertLevels) )
+       allocate(qg1d(1:nVertLevels) )
+       allocate(t1d(1:nVertLevels)  )
+       allocate(p1d(1:nVertLevels)  )
+       allocate(dBZ1d(1:nVertLevels))
+       allocate(zp(1:nVertLevels)   )
+
+       do iCell=1,nCells
+          do k=1,nVertLevels
+             ! Calculate pressure at full levels
+             p1d(k)  = pressure_base(k,iCell) + pressure_p(k,iCell)
+             ! Calculate temperature from theta_m
+             pi_term = (p1d(k)/100000.0_RKIND)**(287.0_RKIND/1003.5_RKIND)
+             t1d(k)  = (theta_m(k,iCell) / (1._RKIND + (1._RKIND/0.608_RKIND)*scalars(index_qv,k,iCell))) * pi_term
+             ! Extract mixing ratios
+             qv1d(k) = scalars(index_qv,k,iCell)
+             qc1d(k) = 0._RKIND
+             if(index_qc > 0) qc1d(k) = scalars(index_qc,k,iCell)
+             qr1d(k) = 0._RKIND
+             if(index_qr > 0) qr1d(k) = scalars(index_qr,k,iCell)
+             nr1d(k) = 0._RKIND
+             if(index_nr > 0) nr1d(k) = scalars(index_nr,k,iCell)
+             qs1d(k) = 0._RKIND
+             if(index_qs > 0) qs1d(k) = scalars(index_qs,k,iCell)
+             qg1d(k) = 0._RKIND
+             if(index_qg > 0) qg1d(k) = scalars(index_qg,k,iCell)
+             ! Estimate nr from qr when nr is zero, following Thompson's own
+             ! convention (mp_gt_driver lines 1723-1726): assume median volume
+             ! diameter (MVD) = 1 mm, then derive nr from the gamma DSD.
+             ! With mu_r=0, bm_r=3, am_r=pi*rho_w/6:
+             !   lamr = (3 + mu_r + 0.672)/MVD = 3.672/0.001 = 3672
+             !   nr_vol = Gamma(mu_r+1)/Gamma(bm_r+mu_r+1) * rr * lamr^bm_r / am_r
+             !          = (1/6) * qr*rho * 3672^3 / (pi*1000/6)
+             !   nr1d (per kg) = nr_vol/rho = qr * 3672^3 / (6 * pi*1000/6)
+             !                 = qr * 4.951e10 / (pi*1000) = qr * 1.576e7
+             if(qr1d(k) .gt. 1.e-12_RKIND .and. nr1d(k) .le. 0._RKIND) then
+                nr1d(k) = qr1d(k) * 1.576e7_RKIND
+             endif
+             ! Height AGL
+             zp(k) = 0.5_RKIND*(zgrid(k,iCell)+zgrid(k+1,iCell)) - zgrid(1,iCell)
+             dBZ1d(k) = -35._RKIND
+          enddo
+
+          ! Call Thompson reflectivity calculation (TEMPO is Thompson-derived)
+          call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,1,nVertLevels,iCell,1)
+
+          ! Copy results to arrays
+          kp = 1
+          do k=1,nVertLevels
+             dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
+             refl10cm(k,iCell) = dBZ1d(k)
+             if(zp(k) < 1000._RKIND) kp = k
+          enddo
+          refl10cm_max(iCell) = maxval(dBZ1d(:))
+
+          ! Interpolate to 1 km AGL
+          if(kp+1 <= nVertLevels .and. zp(kp+1) > zp(kp)) then
+             w1 = (zp(kp+1)-1000._RKIND)/(zp(kp+1)-zp(kp))
+             w2 = 1.0_RKIND - w1
+             refl10cm_1km(iCell) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
+          else
+             refl10cm_1km(iCell) = refl10cm_max(iCell)
+          endif
+          refl10cm_1km_max(iCell) = refl10cm_1km(iCell)
+       enddo
+
+       deallocate(qv1d )
+       deallocate(qc1d )
+       deallocate(qr1d )
+       deallocate(nr1d )
+       deallocate(qs1d )
+       deallocate(qg1d )
+       deallocate(t1d  )
+       deallocate(p1d  )
+       deallocate(dBZ1d)
+       deallocate(zp   )
+
+    case ("mp_nssl2m")
+       ! NSSL 2-moment microphysics using NSSL-specific reflectivity formulas
+       ! These use the exact gamma-distributed size distributions and proper
+       ! dielectric constants for NSSL hydrometeor properties.
+       allocate(qv1d(1:nVertLevels) )
+       allocate(qr1d(1:nVertLevels) )
+       allocate(qi1d(1:nVertLevels) )
+       allocate(qs1d(1:nVertLevels) )
+       allocate(qg1d(1:nVertLevels) )
+       allocate(nr1d(1:nVertLevels) )
+       allocate(ni1d(1:nVertLevels) )
+       allocate(ns1d(1:nVertLevels) )
+       allocate(ng1d(1:nVertLevels) )
+       allocate(t1d(1:nVertLevels)  )
+       allocate(p1d(1:nVertLevels)  )
+       allocate(dBZ1d(1:nVertLevels))
+       allocate(zp(1:nVertLevels)   )
+
+       do iCell=1,nCells
+          do k=1,nVertLevels
+             ! Calculate pressure at full levels
+             p1d(k)  = pressure_base(k,iCell) + pressure_p(k,iCell)
+             ! Calculate temperature from theta_m
+             pi_term = (p1d(k)/100000.0_RKIND)**(287.0_RKIND/1003.5_RKIND)
+             t1d(k)  = (theta_m(k,iCell) / (1._RKIND + (1._RKIND/0.608_RKIND)*scalars(index_qv,k,iCell))) * pi_term
+             ! Extract mixing ratios (NSSL has qr, qs, qg)
+             qv1d(k) = scalars(index_qv,k,iCell)
+             qr1d(k) = 0._RKIND
+             if(index_qr > 0) qr1d(k) = scalars(index_qr,k,iCell)
+             nr1d(k) = 0._RKIND
+             if(index_nr > 0) nr1d(k) = scalars(index_nr,k,iCell)
+
+             qi1d(k) = 0._RKIND
+             if(index_qi > 0) qi1d(k) = scalars(index_qi,k,iCell)
+             ni1d(k) = 0._RKIND
+             if(index_ni > 0) ni1d(k) = scalars(index_ni,k,iCell)
+
+             qs1d(k) = 0._RKIND
+             if(index_qs > 0) qs1d(k) = scalars(index_qs,k,iCell)
+             ns1d(k) = 0._RKIND
+             if(index_ns > 0) ns1d(k) = scalars(index_ns,k,iCell)
+             qg1d(k) = 0._RKIND
+             if(index_qg > 0) qg1d(k) = scalars(index_qg,k,iCell)
+             ng1d(k) = 0._RKIND
+             if(index_ng > 0) ng1d(k) = scalars(index_ng,k,iCell)
+             ! Height AGL
+             zp(k) = 0.5_RKIND*(zgrid(k,iCell)+zgrid(k+1,iCell)) - zgrid(1,iCell)
+             dBZ1d(k) = -35._RKIND
+          enddo
+
+          ! Call NSSL-MP-specific reflectivity calculation
+          ! Uses gamma-distributed size distributions and NSSL dielectric properties
+           do k=1,nVertLevels
+            
+             dBZ1d(k) = nssl_qtodbz(             &
+                              qc=0.0_RKIND, qr=qr1d(k), qi=qi1d(k), qs=qs1d(k), qh=qg1d(k), qhl=0.0_RKIND,&
+                              ccw=0.0_RKIND, crw=nr1d(k), cci=ni1d(k), csw=ns1d(k), chw=ng1d(k), chl=0.0_RKIND,  &
+                              vhw=0.0_RKIND, vhl=0.0_RKIND, zrw=0.0_RKIND, zhw=0.0_RKIND, zhl=0.0_RKIND, &
+                              pb=pi_term, tb=theta_m(k,iCell),rho_air=rho_zz(k,iCell)  )
+           enddo
+!           do k=1,nVertLevels
+!              call compute_nssl_reflectivity( &
+!                  qr=qr1d(k), qc=0.0_RKIND, qi=0.0_RKIND, qs=qs1d(k), &
+!                  qh=qg1d(k), qhl=0.0_RKIND, &
+!                  nr=1.0e7_RKIND, ni=0.0_RKIND, ns=1.0e6_RKIND, &
+!                  nh=1.0e5_RKIND, nhl=0.0_RKIND, &
+!                  rho_air=rho_zz(k,iCell), temp=t1d(k), &
+!                  ipconc=5, idbzci=0, &
+!                  dbz=dBZ1d(k) )
+!           enddo
+
+          ! Copy results to arrays
+          kp = 1
+          do k=1,nVertLevels
+             dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
+             refl10cm(k,iCell) = dBZ1d(k)
+             if(zp(k) < 1000._RKIND) kp = k
+          enddo
+          refl10cm_max(iCell) = maxval(dBZ1d(:))
+
+          ! Interpolate to 1 km AGL
+          if(kp+1 <= nVertLevels .and. zp(kp+1) > zp(kp)) then
+             w1 = (zp(kp+1)-1000._RKIND)/(zp(kp+1)-zp(kp))
+             w2 = 1.0_RKIND - w1
+             refl10cm_1km(iCell) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
+          else
+             refl10cm_1km(iCell) = refl10cm_max(iCell)
+          endif
+          refl10cm_1km_max(iCell) = refl10cm_1km(iCell)
+       enddo
+
+       deallocate(qv1d )
+       deallocate(qr1d )
+       deallocate(qi1d )
+       deallocate(qs1d )
+       deallocate(qg1d )
+       deallocate(nr1d )
+       deallocate(ni1d )
+       deallocate(ns1d )
+       deallocate(ng1d )
+       deallocate(t1d  )
+       deallocate(p1d  )
+       deallocate(dBZ1d)
+       deallocate(zp   )
+
+    case ("mp_thompson","mp_thompson_aerosols")
+       ! Thompson microphysics - use calc_refl10cm for reflectivity calculation.
+       allocate(qv1d(1:nVertLevels) )
+       allocate(qc1d(1:nVertLevels) )
+       allocate(qr1d(1:nVertLevels) )
+       allocate(nr1d(1:nVertLevels) )
+       allocate(qs1d(1:nVertLevels) )
+       allocate(qg1d(1:nVertLevels) )
+       allocate(t1d(1:nVertLevels)  )
+       allocate(p1d(1:nVertLevels)  )
+       allocate(dBZ1d(1:nVertLevels))
+       allocate(zp(1:nVertLevels)   )
+
+       do iCell=1,nCells
+          do k=1,nVertLevels
+             ! Calculate pressure at full levels
+             p1d(k)  = pressure_base(k,iCell) + pressure_p(k,iCell)
+             ! Calculate temperature from theta_m
+             pi_term = (p1d(k)/100000.0_RKIND)**(287.0_RKIND/1003.5_RKIND)
+             t1d(k)  = (theta_m(k,iCell) / (1._RKIND + (1._RKIND/0.608_RKIND)*scalars(index_qv,k,iCell))) * pi_term
+             ! Extract mixing ratios
+             qv1d(k) = scalars(index_qv,k,iCell)
+             qc1d(k) = 0._RKIND
+             if(index_qc > 0) qc1d(k) = scalars(index_qc,k,iCell)
+             qr1d(k) = 0._RKIND
+             if(index_qr > 0) qr1d(k) = scalars(index_qr,k,iCell)
+             nr1d(k) = 0._RKIND
+             if(index_nr > 0) nr1d(k) = scalars(index_nr,k,iCell)
+             qs1d(k) = 0._RKIND
+             if(index_qs > 0) qs1d(k) = scalars(index_qs,k,iCell)
+             qg1d(k) = 0._RKIND
+             if(index_qg > 0) qg1d(k) = scalars(index_qg,k,iCell)
+             ! Height AGL
+             zp(k) = 0.5_RKIND*(zgrid(k,iCell)+zgrid(k+1,iCell)) - zgrid(1,iCell)
+             dBZ1d(k) = -35._RKIND
+          enddo
+
+          ! Call Thompson reflectivity calculation
+          call calc_refl10cm(qv1d,qc1d,qr1d,nr1d,qs1d,qg1d,t1d,p1d,dBZ1d,1,nVertLevels,iCell,1)
+
+          ! Copy results to arrays
+          kp = 1
+          do k=1,nVertLevels
+             dBZ1d(k) = max(-35._RKIND,dBZ1d(k))
+             refl10cm(k,iCell) = dBZ1d(k)
+             if(zp(k) < 1000._RKIND) kp = k
+          enddo
+          refl10cm_max(iCell) = maxval(dBZ1d(:))
+
+          ! Interpolate to 1 km AGL
+          if(kp+1 <= nVertLevels .and. zp(kp+1) > zp(kp)) then
+             w1 = (zp(kp+1)-1000._RKIND)/(zp(kp+1)-zp(kp))
+             w2 = 1.0_RKIND - w1
+             refl10cm_1km(iCell) = w1*dBZ1d(kp) + w2*dBZ1d(kp+1)
+          else
+             refl10cm_1km(iCell) = refl10cm_max(iCell)
+          endif
+          refl10cm_1km_max(iCell) = refl10cm_1km(iCell)
+       enddo
+
+       deallocate(qv1d )
+       deallocate(qc1d )
+       deallocate(qr1d )
+       deallocate(nr1d )
+       deallocate(qs1d )
+       deallocate(qg1d )
+       deallocate(t1d  )
+       deallocate(p1d  )
+       deallocate(dBZ1d)
+       deallocate(zp   )
+
+    case default
+       ! For other schemes, initialize to -35 dBZ
+       refl10cm(:,:) = -35._RKIND
+       refl10cm_max(:) = -35._RKIND
+       refl10cm_1km(:) = -35._RKIND
+       refl10cm_1km_max(:) = -35._RKIND
+
+ end select microp_select
+
+ end subroutine init_reflectivity_diagnostic
+
 
 !=================================================================================================================
  end module mpas_atmphys_driver_microphysics
