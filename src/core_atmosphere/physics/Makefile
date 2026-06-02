@@ -66,7 +66,7 @@ core_physics_mmm: core_physics_init
 
 core_microphysics: core_physics_init core_physics_mmm
 	(cd physics_noaa/TEMPO; $(MAKE) -f Makefile.mpas)
-	(cd physics_noaa/NSSL-MP; cp ./MPAS/Makefile .; cp ./MPAS/mp_nssl.F90 .; $(MAKE) COREDEF="$(COREDEF)")
+	(cd physics_noaa/NSSL-MP; ln -sf ./MPAS/Makefile .; ln -sf ./MPAS/mp_nssl.F90 .; $(MAKE) COREDEF="$(COREDEF)")
 
 core_SMOKE: core_physics_init
 	(cd physics_noaa/SMOKE; cp ./MPAS/Makefile .; cp ./MPAS/mpas_smoke_wrapper.F90 .; $(MAKE) all)
