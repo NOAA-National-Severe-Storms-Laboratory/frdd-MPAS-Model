@@ -426,6 +426,7 @@
                 <package name="tempo_hailaware_in" description="variables for TEMPO hail-aware microphysics."/>
                 <package name="mp_wsm6_in" description="parameterization of WSM6 cloud microphysics."/>
                 <package name="mp_nssl2m_in" description="parameterization of NSSL 2-moment microphysics."/>
+                <package name="nssl_aero_in" description="variables for TE aerosols in NSSL microphysics."/>
                 <package name="nssl_hail_in" description="variables for hail in NSSL microphysics."/>
                 <package name="nssl_ccn_in" description="variables for CCN in NSSL microphysics."/>
                 <package name="nssl3m_in" description="variables for NSSL 3-moment microphysics."/>
@@ -2073,11 +2074,11 @@
 
                         <var name="nifa" array_group="number" units="nb kg^{-1}"
                              description="Ice-friendly aerosol number concentration"
-                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;nssl_aero_in"/>
 
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Water-friendly aerosol number concentration"
-                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in;nssl_aero_in"/>
                 </var_array>
 #endif
 
@@ -2763,6 +2764,11 @@
                 <nml_option name="config_nssl_hail_on" type="logical" default_value="true" in_defaults="false"
                      units="-"
                      description="Whether to activate the hail category in NSSL MP"
+                     possible_values=".true. or .false."/>
+
+                <nml_option name="config_nssl_aero_on" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="Whether to activate TE aerosols with NSSL MP"
                      possible_values=".true. or .false."/>
 
                 <nml_option name="config_nssl_ccn_on" type="logical" default_value="true" in_defaults="false"
@@ -4023,11 +4029,11 @@
 
                 <var name="taod5502d" type="real" dimensions="nCells Time" units="unitless"
                      description="total aerosol optical depth at 550 nm from the Thompson cloud microphysics"
-                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in;nssl_aero_in"/>
 
                 <var name="taod5503d" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="aerosol optical depth at 550 nm from the Thompson cloud microphysics"
-                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in;nssl_aero_in"/>
 
 
                 <!-- ================================================================================================== -->
@@ -4271,11 +4277,11 @@
 
                 <var name="rnifampten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of ice-friendly aerosol number concentration due to microphysics"
-                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in;nssl_aero_in"/>
 
                 <var name="rnwfampten" type="real" dimensions="nVertLevels nCells Time" units="nb kg^{-1} s^{-1}"
                      description="tendency of water-friendly aerosol number concentration due to microphysics"
-                     packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+                     packages="mp_thompson_aers_in;tempo_aerosolaware_in;nssl_aero_in"/>
 
                 <!-- ================================================================================================== -->
                 <!-- TENDENCIES FROM PARAMETERIZATION OF CONVECTION:                                                    -->

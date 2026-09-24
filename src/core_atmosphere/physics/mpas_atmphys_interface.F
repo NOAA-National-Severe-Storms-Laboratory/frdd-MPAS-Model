@@ -78,13 +78,14 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme,pbl_scheme
- logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_nssl_aero_on
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme'   ,pbl_scheme   )
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
 
  if(.not.allocated(psfc_p) ) allocate(psfc_p(ims:ime,jms:jme)         )
  if(.not.allocated(ptop_p) ) allocate(ptop_p(ims:ime,jms:jme)         )
@@ -128,6 +129,13 @@
           if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
        endif
 
+    case("mp_nssl2m")
+       if(.not.allocated(qh_p)   ) allocate(qh_p(ims:ime,kms:kme,jms:jme)   )
+       if(config_nssl_aero_on) then
+          if(.not.allocated(nifa_p)) allocate(nifa_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(nwfa_p)) allocate(nwfa_p(ims:ime,kms:kme,jms:jme))
+       endif
+
     case default
  end select microp_select
 
@@ -167,13 +175,14 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme,pbl_scheme
- logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware, config_nssl_aero_on
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme'   ,pbl_scheme   )
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
 
  if(allocated(psfc_p)  ) deallocate(psfc_p  )
  if(allocated(ptop_p)  ) deallocate(ptop_p  )
@@ -205,6 +214,7 @@
  if(allocated(qi_p)    ) deallocate(qi_p    )
  if(allocated(qs_p)    ) deallocate(qs_p    )
  if(allocated(qg_p)    ) deallocate(qg_p    )
+ if(allocated(qh_p)    ) deallocate(qh_p    )
 
  microp_select: select case(trim(microp_scheme))
     case("mp_thompson_aerosols")
@@ -213,6 +223,12 @@
 
     case("mp_tempo")
        if(config_tempo_aerosolaware) then
+          if(allocated(nifa_p)) deallocate(nifa_p)
+          if(allocated(nwfa_p)) deallocate(nwfa_p)
+       endif
+
+    case("mp_nssl2m")
+       if(config_nssl_aero_on) then
           if(allocated(nifa_p)) deallocate(nifa_p)
           if(allocated(nwfa_p)) deallocate(nwfa_p)
        endif
@@ -264,9 +280,9 @@
 
 !local pointers:
  character(len=StrKIND),pointer:: microp_scheme,pbl_scheme
- logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_nssl_aero_on
 
- integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
+ integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg,index_qh
  integer,pointer:: index_nc,index_ni,index_nifa,index_nwfa
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
@@ -275,7 +291,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p,u,v,w
- real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
+ real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg,qh
  real(kind=RKIND),dimension(:,:),pointer  :: nc,ni,nifa,nwfa
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
@@ -300,6 +316,7 @@
  call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
  call mpas_pool_get_config(configs,'config_pbl_scheme'   ,pbl_scheme   )
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
 
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
@@ -328,6 +345,7 @@
  call mpas_pool_get_dimension(state,'index_qi',index_qi)
  call mpas_pool_get_dimension(state,'index_qs',index_qs)
  call mpas_pool_get_dimension(state,'index_qg',index_qg)
+ call mpas_pool_get_dimension(state,'index_qh',index_qh)
 
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
  qv => scalars(index_qv,:,:)
@@ -336,6 +354,7 @@
  qi => scalars(index_qi,:,:)
  qs => scalars(index_qs,:,:)
  qg => scalars(index_qg,:,:)
+ IF ( index_qh > 0 ) qh => scalars(index_qh,:,:)
 
  call mpas_pool_get_array(diag_physics,'plrad',plrad)
 
@@ -350,6 +369,11 @@
     qi_p(i,k,j) = max(0.,qi(k,i))
     qs_p(i,k,j) = max(0.,qs(k,i))
     qg_p(i,k,j) = max(0.,qg(k,i))
+    IF ( index_qh > 0 ) then
+     qh_p(i,k,j) = max(0.,qh(k,i))
+    else
+    
+    endif
 
     !arrays located at theta points:
     u_p(i,k,j) = u(k,i)
@@ -390,6 +414,24 @@
 
     case("mp_tempo")
        if(config_tempo_aerosolaware) then
+          nullify(nifa)
+          nullify(nwfa)
+          call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+          call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+          nifa => scalars(index_nifa,:,:)
+          nwfa => scalars(index_nwfa,:,:)
+          do j = jts,jte
+             do k = kts,kte
+                do i = its,ite
+                   nifa_p(i,k,j) = max(0.,nifa(k,i))
+                   nwfa_p(i,k,j) = max(0.,nwfa(k,i))
+                enddo
+             enddo
+          enddo
+       endif
+
+    case("mp_nssl2m")
+       if(config_nssl_aero_on) then
           nullify(nifa)
           nullify(nwfa)
           call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
@@ -681,7 +723,7 @@
  real(kind=RKIND),dimension(:),pointer    :: nifa2d,nwfa2d,nt_c,mu_c
 !TEMPO/NSSL
  logical,pointer:: config_nssl_3moment
- logical,pointer:: config_nssl_hail_on, config_nssl_ccn_on
+ logical,pointer:: config_nssl_hail_on, config_nssl_ccn_on, config_nssl_aero_on
  logical,pointer:: config_tempo_aerosolaware,config_tempo_hailaware
  logical,pointer:: config_tempo_ml_for_bl_nc
  integer,pointer:: index_zrw,index_zgw,index_zhw
@@ -714,6 +756,7 @@
  call mpas_pool_get_config(configs,'config_nssl_3moment',config_nssl_3moment)
  call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
  call mpas_pool_get_config(configs,'config_nssl_ccn_on',config_nssl_ccn_on)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
  call mpas_pool_get_config(configs,'config_tempo_ml_for_bl_nc',config_tempo_ml_for_bl_nc)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -856,6 +899,13 @@
              nr   => scalars(index_nr,:,:)
              ns   => scalars(index_ns,:,:)
              ng   => scalars(index_ng,:,:)
+             IF ( config_nssl_aero_on ) THEN
+              call mpas_pool_get_dimension(state,'index_nccn' ,index_nccn  )
+                call mpas_pool_get_dimension(state,'index_nifa',index_nifa)
+                call mpas_pool_get_dimension(state,'index_nwfa',index_nwfa)
+                nifa => scalars(index_nifa,:,:)
+                nwfa => scalars(index_nwfa,:,:)
+             ENDIF
              IF ( config_nssl_ccn_on ) THEN
               call mpas_pool_get_dimension(state,'index_nccn' ,index_nccn  )
               nccn => scalars(index_nccn,:,:)
@@ -1163,6 +1213,20 @@
              enddo
              enddo
 
+             if(config_nssl_aero_on) then
+                call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
+                call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
+
+                do k = kts,kte
+                do i = its,ite
+                   rnifampten(k,i) = nifa(k,i)
+                   rnwfampten(k,i) = nwfa(k,i)
+                enddo
+                enddo
+             endif
+
+
+
           case default
        end select mp2a_tend_select
 
@@ -1193,7 +1257,7 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme
  logical,pointer:: config_nssl_3moment
- logical,pointer:: config_nssl_hail_on, config_nssl_ccn_on
+ logical,pointer:: config_nssl_hail_on, config_nssl_ccn_on, config_nssl_aero_on
  logical,pointer:: config_tempo_hailaware, config_tempo_aerosolaware
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_nc,index_ni,index_nr,index_nifa,index_nwfa
@@ -1235,6 +1299,7 @@
  call mpas_pool_get_config(configs,'config_nssl_3moment',config_nssl_3moment)
  call mpas_pool_get_config(configs,'config_nssl_hail_on',config_nssl_hail_on)
  call mpas_pool_get_config(configs,'config_nssl_ccn_on',config_nssl_ccn_on)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
@@ -1682,6 +1747,19 @@
                    rncmpten(k,i)   = (nc(k,i)-rncmpten(k,i))/dt_dyn
                    rnifampten(k,i) = (nifa(k,i)-rnifampten(k,i))/dt_dyn
                    rnwfampten(k,i) = (nwfa(k,i)-rnwfampten(k,i))/dt_dyn
+                enddo
+                enddo
+             endif
+
+          case("mp_nssl2m")
+
+             if ( config_nssl_aero_on ) then
+               call mpas_pool_get_array(tend_physics,'rnifampten',rnifampten)
+               call mpas_pool_get_array(tend_physics,'rnwfampten',rnwfampten)
+               do k = kts,kte
+                do i = its,ite
+                   rnifampten(k,i) = 0.0
+                   rnwfampten(k,i) = 0.0
                 enddo
                 enddo
              endif

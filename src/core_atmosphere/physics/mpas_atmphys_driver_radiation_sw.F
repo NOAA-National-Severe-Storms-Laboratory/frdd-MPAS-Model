@@ -113,13 +113,14 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme,     &
                                   radt_sw_scheme
- logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_nssl_aero_on
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme' ,mp_scheme     )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
-      
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
+
  if(.not.allocated(f_ice)        ) allocate(f_ice(ims:ime,kms:kme,jms:jme)        )
  if(.not.allocated(f_rain)       ) allocate(f_rain(ims:ime,kms:kme,jms:jme)       )
 
@@ -190,6 +191,13 @@
                 if(.not.allocated(taod5502d_p)) allocate(taod5502d_p(ims:ime,jms:jme))
                 if(.not.allocated(taod5503d_p)) allocate(taod5503d_p(ims:ime,kms:kme,jms:jme))
              endif
+          case("mp_nssl2m")
+             if (config_nssl_aero_on) then
+                if(.not.allocated(ht_p)       ) allocate(ht_p(ims:ime,jms:jme)       )
+                if(.not.allocated(taer_type_p)) allocate(taer_type_p(ims:ime,jms:jme))
+                if(.not.allocated(taod5502d_p)) allocate(taod5502d_p(ims:ime,jms:jme))
+                if(.not.allocated(taod5503d_p)) allocate(taod5503d_p(ims:ime,kms:kme,jms:jme))
+             endif
           case default
        end select aerosol_select
 
@@ -251,13 +259,14 @@
 !local pointers:
  character(len=StrKIND),pointer:: mp_scheme,     &
                                   radt_sw_scheme
- logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_nssl_aero_on
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_config(configs,'config_microp_scheme' ,mp_scheme     )
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme)
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
 
  if(allocated(f_ice)        ) deallocate(f_ice        )
  if(allocated(f_rain)       ) deallocate(f_rain       )
@@ -321,6 +330,13 @@
              if(allocated(taod5503d_p)) deallocate(taod5503d_p)
           case("mp_tempo")
              if	(config_tempo_aerosolaware) then
+                if(allocated(ht_p)       ) deallocate(ht_p       )
+                if(allocated(taer_type_p)) deallocate(taer_type_p)
+                if(allocated(taod5502d_p)) deallocate(taod5502d_p)
+                if(allocated(taod5503d_p)) deallocate(taod5503d_p)
+             endif
+          case("mp_nssl2m")
+             if(config_nssl_aero_on) then
                 if(allocated(ht_p)       ) deallocate(ht_p       )
                 if(allocated(taer_type_p)) deallocate(taer_type_p)
                 if(allocated(taod5502d_p)) deallocate(taod5502d_p)
@@ -390,7 +406,7 @@
 !local pointers:
  logical,pointer:: config_o3climatology
  logical,pointer:: config_microp_re
- logical,pointer:: config_tempo_aerosolaware
+ logical,pointer:: config_tempo_aerosolaware,config_nssl_aero_on
  logical,pointer:: config_radt_use_aerosol
  character(len=StrKIND),pointer:: radt_sw_scheme
  character(len=StrKIND),pointer:: microp_scheme
@@ -413,6 +429,7 @@
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme      )
  call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
  call mpas_pool_get_config(configs,'config_tempo_aerosolaware',config_tempo_aerosolaware)
+ call mpas_pool_get_config(configs,'config_nssl_aero_on',config_nssl_aero_on)
  call mpas_pool_get_config(configs,'config_radt_use_aerosol',config_radt_use_aerosol)
       
  call mpas_pool_get_array(mesh,'latCell',latCell)
@@ -627,8 +644,9 @@
                                its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
                                         )
 
-          case ("mp_tempo")
-             if (config_tempo_aerosolaware) then
+          case ("mp_tempo","mp_nssl2m")
+             if ( ( microp_scheme == "mp_tempo" .and. config_tempo_aerosolaware ) .or. &
+                  ( microp_scheme == "mp_nssl2m" .and. config_nssl_aero_on) ) then
                 call mpas_pool_get_array(mesh,'zgrid',zgrid)
                 call mpas_pool_get_array(diag_physics,'taod5502d',taod5502d)
                 call mpas_pool_get_array(diag_physics,'taod5503d',taod5503d)
